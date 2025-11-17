@@ -1,0 +1,58 @@
+HELP.md
+target/
+.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+build/
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+### VS Code ###
+.vscode/
+
+# Maven build output
+/target/
+
+# IDE files
+*.iml
+.idea/
+.vscode/
+.classpath
+.project
+.settings/
+
+# OS junk
+.DS_Store
+
+# Logs
+logs/
+*.log
+
+# Sensitive local stuff
+src/main/resources/keystore.p12
+
+# If you ever externalize secrets for dev
+application-local.properties
+*.env

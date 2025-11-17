@@ -1,0 +1,76 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_DATABASE: fragrancedb
+          MYSQL_USER: maab
+          MYSQL_PASSWORD: password
+          MYSQL_ROOT_PASSWORD: root
+        options: >-
+          --health-cmd="mysqladmin ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=3
+        ports:
+          - 3306:3306
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up JDK 17
+      uses: actions/setup-java@v3
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+        cache: maven
+
+    - name: Build with Maven
+      run: ./mvnw -B clean package -DskipTests
+      env:
+        SPRING_PROFILES_ACTIVE: dev
+
+    - name: Run Tests
+      run: ./mvnw -B test
+      env:
+        SPRING_PROFILES_ACTIVE: dev
+
+    - name: Upload Coverage Reports
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: test-results
+        path: target/surefire-reports/
+
+    - name: Build Docker Image (optional)
+      run: |
+        docker build -t fragrance-tracker:${{ github.sha }} .
+      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+  # Optional: Deploy to cloud platform
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Deploy to Render (if configured)
+      run: |
+        echo "Deploying to Render..."
+        # Add your Render deployment script or webhook here
+        # Example:
+        # curl https://api.render.com/deploy/srv-xxxxx?key=YOUR_DEPLOY_KEY
+      if: secrets.RENDER_DEPLOY_KEY != ''

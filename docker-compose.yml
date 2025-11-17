@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  mariadb:
+    image: mariadb:10.5
+    container_name: fragrance-mariadb
+    environment:
+      MYSQL_DATABASE: fragrancedb
+      MYSQL_USER: maab
+      MYSQL_PASSWORD: password
+      MYSQL_ROOT_PASSWORD: root
+    ports:
+      - "3306:3306"
+    volumes:
+      - mariadb_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  fragrance-tracker:
+    build: .
+    container_name: fragrance-tracker
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      SPRING_DATASOURCE_URL: jdbc:mysql://mariadb:3306/fragrancedb?useSSL=false&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_USERNAME: maab
+      SPRING_DATASOURCE_PASSWORD: password
+    ports:
+      - "8080:8080"
+      - "8443:8443"
+    depends_on:
+      mariadb:
+        condition: service_healthy
+    volumes:
+      - ./target:/app/target
+
+volumes:
+  mariadb_data:

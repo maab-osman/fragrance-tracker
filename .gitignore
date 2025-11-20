@@ -51,8 +51,55 @@ logs/
 *.log
 
 # Sensitive local stuff
-src/main/resources/keystore.p12
+## Sensitive local config and secrets
+# Don't commit any application property files that may contain credentials
+/src/main/resources/application.properties
+/src/main/resources/application-dev.properties
+/src/main/resources/application-prod.properties
+/src/main/resources/keystore.p12
 
-# If you ever externalize secrets for dev
+# environment files and local overrides
+.env
+.env.*
 application-local.properties
-*.env
+
+# credentials, keys and secrets
+*.p12
+*.jks
+*.keystore
+secrets.yml
+
+# IDE/editor
+.idea/
+*.iml
+.vscode/
+*.sublime-workspace
+*.sublime-project
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/
+*.log
+
+# Build
+/target/
+build/
+
+# Node/npm (if frontend were present)
+node_modules/
+package-lock.json
+yarn.lock
+
+# Misc
+.classpath
+.project
+.settings/
+
+# Ignore Maven wrapper jar (already listed)
+.mvn/wrapper/maven-wrapper.jar
+
+# Cloud deployment script
+push-to-cloud.sh

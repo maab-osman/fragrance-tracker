@@ -3,6 +3,7 @@ package com.maab.fragrance_tracker.controller;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+// Validation removed: no BindingResult or @Valid usage
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -15,8 +16,12 @@ import org.springframework.web.bind.annotation.RequestBody;
 import com.maab.fragrance_tracker.model.User;
 import com.maab.fragrance_tracker.service.UserService;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 @Controller
 public class HomeController {
+    private static final Logger logger = LoggerFactory.getLogger(HomeController.class);
     
     @Autowired
     private UserService userService;
@@ -38,12 +43,16 @@ public class HomeController {
     }
     
     @PostMapping("/register")
-    public String registerUser(@ModelAttribute User user, Model model) {
+    public String registerUser(@ModelAttribute("user") User user, Model model) {
         try {
             userService.registerUser(user);
             return "redirect:/login?registered";
         } catch (RuntimeException e) {
-            model.addAttribute("error", e.getMessage());
+            // Log full stacktrace to help diagnose the root cause
+            logger.error("Error registering user (username={})", user.getUsername(), e);
+            // Surface the exception class as well as its message so UI shows more context
+            String err = e.getMessage() == null ? e.getClass().getSimpleName() : e.getMessage() + " (" + e.getClass().getSimpleName() + ")";
+            model.addAttribute("error", err);
             model.addAttribute("user", user);
             return "register";
         }
@@ -57,7 +66,9 @@ public class HomeController {
             userService.registerUser(user);
             return ResponseEntity.ok().body(java.util.Map.of("message", "registered"));
         } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(java.util.Map.of("message", e.getMessage()));
+            logger.error("Error registering user (json) username={}", user.getUsername(), e);
+            String err = e.getMessage() == null ? e.getClass().getSimpleName() : e.getMessage() + " (" + e.getClass().getSimpleName() + ")";
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(java.util.Map.of("message", err));
         }
     }
     

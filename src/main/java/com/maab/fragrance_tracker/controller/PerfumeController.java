@@ -143,18 +143,9 @@ public String addPerfume(@ModelAttribute Perfume perfume) {
 private ReviewService reviewService;
 
 @GetMapping("/{id}/reviews")
-public String viewPerfumeReviews(@PathVariable Long id, Model model) {
-    var opt = perfumeService.findById(id);
-    if (opt.isEmpty()) {
-        return "error/404";
-    }
-    Perfume perfume = opt.get();
-    model.addAttribute("perfume", perfume);
-    model.addAttribute("reviews", reviewService.getReviewsByPerfume(perfume));
-    model.addAttribute("averageRating", reviewService.getAverageRating(perfume));
-    model.addAttribute("newReview", new Review());
-    
-    return "perfumes/reviews";
+public String viewPerfumeReviews(@PathVariable Long id) {
+    // Redirect to discover page - reviews are now shown in modal on discover page
+    return "redirect:/discover";
 }
 
 @PostMapping("/{id}/reviews")
@@ -175,7 +166,7 @@ public String addReview(@PathVariable Long id, @ModelAttribute Review review) {
     review.setPerfume(perfume);
     reviewService.saveReview(review);
     
-    return "redirect:/perfumes/" + id + "/reviews";
+    return "redirect:/discover";
 }
 }
 

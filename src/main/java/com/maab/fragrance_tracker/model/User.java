@@ -34,6 +34,9 @@ public class User {
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Perfume> perfumes = new ArrayList<>();
+
+    // Admin flag - nullable in DB, default false
+    private boolean admin = false;
     
     // Constructors
     public User() {}
@@ -95,6 +98,14 @@ public class User {
     public void removePerfume(Perfume perfume) {
         perfumes.remove(perfume);
         perfume.setUser(null);
+    }
+
+    public boolean isAdmin() {
+        return admin;
+    }
+
+    public void setAdmin(boolean admin) {
+        this.admin = admin;
     }
      
 }

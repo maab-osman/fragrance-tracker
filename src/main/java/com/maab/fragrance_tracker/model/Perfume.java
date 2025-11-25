@@ -48,6 +48,8 @@ public class Perfume {
     private User user;
     
     private String collectionStatus; // OWNED, WISHLIST, FINISHED
+    
+    private Long sourcePerfumeId; // ID of the catalog perfume this was cloned from
 
     // Constructors
     public Perfume() {}
@@ -129,6 +131,14 @@ public class Perfume {
 
     public void setCollectionStatus(String collectionStatus) {
         this.collectionStatus = collectionStatus;
+    }
+
+    public Long getSourcePerfumeId() {
+        return sourcePerfumeId;
+    }
+
+    public void setSourcePerfumeId(Long sourcePerfumeId) {
+        this.sourcePerfumeId = sourcePerfumeId;
     }
 }
 

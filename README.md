@@ -62,6 +62,28 @@ src/main/resources/
 └── application.properties (local configs, not committed)
 ```
 
+## Local development (H2) — safe, no remote DB changes
+
+Use the `dev` profile to run the application with an in-memory H2 database that won't touch your MySQL or other remote databases.
+
+Run locally with Maven (uses the H2 profile):
+
+```bash
+./mvnw -DskipTests spring-boot:run -Dspring-boot.run.profiles=dev
+```
+
+Notes:
+- The H2 console will be available at http://localhost:8080/h2-console when the app is running with the `dev` profile.
+- The `application-dev.properties` file is intended for local development and should remain uncommitted (it's already ignored by `.gitignore`).
+- To explicitly set the profile via environment variable:
+
+```bash
+export SPRING_PROFILES_ACTIVE=dev
+./mvnw -DskipTests spring-boot:run
+```
+
+If you want me to run the app locally now with the `dev` profile and confirm the H2 console appears, say "please run dev" and I'll start it for you.
+
 ## License
 
 MIT License - See LICENSE file for details

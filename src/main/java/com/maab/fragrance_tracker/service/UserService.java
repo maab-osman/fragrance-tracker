@@ -1,74 +1,81 @@
 package com.maab.fragrance_tracker.service;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.crypto.password.PasswordEncoder;
+import java.util.Optional;
+import java.util.UUID;
+
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import com.maab.fragrance_tracker.model.User;
 import com.maab.fragrance_tracker.repository.UserRepository;
 
-import java.util.Optional;
-
-/**
- * Service layer for user management operations.
- * 
- * Handles user registration, authentication, and profile management with
- * password encoding and validation. Supports both traditional and OAuth2 authentication.
- * 
- * @author Maab Osman
- * @version 1.0
- */
 @Service
 public class UserService {
-    
-    @Autowired
-    private UserRepository userRepository;
-    
-    @Autowired
-    private PasswordEncoder passwordEncoder;
-    
-    /**
-     * Registers a new user with the provided credentials.
-     * 
-     * Validates that username and email are unique, encodes the password
-     * before storage, and saves the user to the database.
-     * 
-     * @param user the user to register with plaintext password
-     * @return the saved user entity with encoded password
-     * @throws RuntimeException if username or email already exists
-     */
+
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder; // comes from PasswordConfig (not SecurityConfig)
+
+    public UserService(UserRepository userRepository,
+                       PasswordEncoder passwordEncoder) {
+        this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
+    }
+
+    /** Traditional registration with plaintext password (will be encoded). */
+    @Transactional
     public User registerUser(User user) {
-        // Check if username already exists
         if (userRepository.existsByUsername(user.getUsername())) {
             throw new RuntimeException("Username already exists");
         }
-        
-        // Check if email already exists
         if (userRepository.existsByEmail(user.getEmail())) {
             throw new RuntimeException("Email already exists");
         }
-        
-        // Encode password before saving
         user.setPassword(passwordEncoder.encode(user.getPassword()));
-
+        if (user.getRole() == null) user.setRole("ROLE_USER");
+        user.setEnabled(true);
         return userRepository.save(user);
     }
-    
-    /**
-     * Finds a user by email or username.
-     * 
-     * Used primarily for OAuth2 authentication to check if a user already
-     * exists before creating a new account.
-     * 
-     * @param emailOrUsername the email or username to search for
-     * @return the user if found, null otherwise
-     */
+
+    /** OAuth2 registration path: generate a safe password and unique username. */
+    @Transactional
+    public User registerOauthUser(String email, String desiredUsername, String provider) {
+        // If email exists, just return it (idempotent)
+        Optional<User> byEmail = userRepository.findByEmail(email);
+        if (byEmail.isPresent()) return byEmail.get();
+
+        String uniqueUsername = ensureUniqueUsername(desiredUsername);
+
+        User u = new User();
+        u.setEmail(email);
+        u.setUsername(uniqueUsername);
+        // Random non-usable password; still encoded to satisfy schema/security
+        u.setPassword(passwordEncoder.encode("oauth2:" + provider + ":" + UUID.randomUUID()));
+        u.setEnabled(true);
+        u.setRole("ROLE_USER");
+        return userRepository.save(u);
+    }
+
     public User findByEmailOrUsername(String emailOrUsername) {
-        Optional<User> userByEmail = userRepository.findByEmail(emailOrUsername);
-        if (userByEmail.isPresent()) {
-            return userByEmail.get();
+        return userRepository.findByEmail(emailOrUsername)
+                .or(() -> userRepository.findByUsername(emailOrUsername))
+                .orElse(null);
+    }
+
+    private String ensureUniqueUsername(String base) {
+        String candidate = (base == null || base.isBlank()) ? "user" : base;
+        candidate = candidate.toLowerCase().replaceAll("[^a-z0-9_\\-]", "");
+        if (candidate.isBlank()) candidate = "user";
+
+        String current = candidate;
+        int i = 1;
+        while (userRepository.existsByUsername(current)) {
+            current = candidate + i;
+            i++;
+            if (current.length() > 50) { // stay within your column length
+                current = current.substring(0, 50);
+            }
         }
-        Optional<User> userByUsername = userRepository.findByUsername(emailOrUsername);
-        return userByUsername.orElse(null);
+        return current;
     }
 }

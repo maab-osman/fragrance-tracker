@@ -42,17 +42,11 @@ public class DiscoverController {
                                                      @RequestParam(required = false, defaultValue = "8") int limit) {
         User currentUser = getCurrentUser();
         List<Perfume> list;
-        switch (mode) {
-            case "random":
-                list = perfumeService.findRandom(limit);
-                break;
-            case "trending":
-                list = perfumeService.findLatest(limit);
-                break;
-            default:
-                list = perfumeService.recommendForUser(currentUser, limit);
-                break;
-        }
+        list = switch (mode) {
+            case "random" -> perfumeService.findRandom(limit);
+            case "trending" -> perfumeService.findLatest(limit);
+            default -> perfumeService.recommendForUser(currentUser, limit);
+        };
 
         final List<Long> userOwnedIds = currentUser != null ? perfumeService.findByUser(currentUser).stream().map(Perfume::getId).collect(Collectors.toList()) : java.util.Collections.emptyList();
 

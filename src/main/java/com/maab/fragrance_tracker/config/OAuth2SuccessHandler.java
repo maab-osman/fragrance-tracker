@@ -1,6 +1,11 @@
 package com.maab.fragrance_tracker.config;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import java.io.IOException;
+import java.util.Locale;
+import java.util.UUID;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.security.oauth2.core.user.OAuth2User;
@@ -10,83 +15,79 @@ import org.springframework.stereotype.Component;
 import com.maab.fragrance_tracker.model.User;
 import com.maab.fragrance_tracker.service.UserService;
 
-import java.io.IOException;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-/**
- * Handles successful OAuth2 authentication by creating or retrieving users.
- * 
- * When a user successfully authenticates via OAuth2 (Google, GitHub, etc.),
- * this handler extracts their profile information and creates a local User
- * account if one doesn't already exist.
- * 
- * @author Maab Osman
- * @version 1.0
- */
 @Component
 public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
-    
-    private static final Logger logger = LoggerFactory.getLogger(OAuth2SuccessHandler.class);
-    
-    @Autowired
-    private UserService userService;
-    
-    /**
-     * Handles successful OAuth2 authentication.
-     * 
-     * Extracts user information from OAuth2 provider and either creates a new
-     * user account or logs in existing user. Redirects to dashboard after success.
-     * 
-     * @param request the HTTP request
-     * @param response the HTTP response
-     * @param authentication the authentication token containing OAuth2 user info
-     * @throws IOException if I/O error occurs
-     * @throws ServletException if servlet error occurs
-     */
+
+    private static final Logger log = LoggerFactory.getLogger(OAuth2SuccessHandler.class);
+
+    private final UserService userService;
+
+    public OAuth2SuccessHandler(UserService userService) {
+        this.userService = userService;
+    }
+
     @Override
-    public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
-            Authentication authentication) throws IOException, ServletException {
-        
-        OAuth2AuthenticationToken authToken = (OAuth2AuthenticationToken) authentication;
-        OAuth2User oauth2User = authToken.getPrincipal();
-        String provider = authToken.getAuthorizedClientRegistrationId();
-        
-        logger.info("OAuth2 login successful for provider: {}", provider);
-        
-        // Extract user information from OAuth2 provider
-        String email = oauth2User.getAttribute("email");
-        String name = oauth2User.getAttribute("name");
-        
-        // For GitHub, use login attribute instead of name
-        if (email == null && "github".equals(provider)) {
-            String login = oauth2User.getAttribute("login");
-            email = login != null ? login + "@github.com" : null;
+    public void onAuthenticationSuccess(HttpServletRequest request,
+                                        HttpServletResponse response,
+                                        Authentication authentication)
+            throws IOException, ServletException {
+
+        OAuth2AuthenticationToken token = (OAuth2AuthenticationToken) authentication;
+        OAuth2User oauth2 = token.getPrincipal();
+        String provider = token.getAuthorizedClientRegistrationId(); // e.g., "google" | "github"
+
+        // Common attributes (providers differ)
+        String email = oauth2.getAttribute("email");
+        String name  = oauth2.getAttribute("name");
+        String login = oauth2.getAttribute("login"); // GitHub username
+
+        // Fallbacks:
+        if (email == null && "github".equalsIgnoreCase(provider)) {
+            // GitHub can hide email; synthesize a stable pseudo-email for local account mapping
+            if (login != null) email = login + "@users.noreply.github.com";
         }
-        
-        // Create or retrieve user
+        if (name == null && login != null) {
+            name = login;
+        }
+        if (name == null && email != null) {
+            name = email.split("@")[0];
+        }
+
+        if (email == null) {
+            // As a last resort, create a unique pseudo-email so we can store the user locally
+            email = "user-" + UUID.randomUUID() + "@oauth2.local";
+        }
+
+        String desiredUsername = toUsername(name != null ? name : email);
+
         try {
-            if (email != null) {
-                User user = userService.findByEmailOrUsername(email);
-                if (user == null) {
-                    // Create new user from OAuth2 profile
-                    User newUser = new User();
-                    newUser.setEmail(email);
-                    newUser.setUsername(name != null ? name.replace(" ", "").toLowerCase() : email.split("@")[0]);
-                    newUser.setPassword("oauth2-" + provider); // Non-functional password for OAuth2 users
-                    userService.registerUser(newUser);
-                    logger.info("Created new user from OAuth2 provider: {}", provider);
-                }
+            User existing = userService.findByEmailOrUsername(email);
+            if (existing == null) {
+                // Create or reuse a unique username; password is random & encoded
+                userService.registerOauthUser(email, desiredUsername, provider);
+                log.info("Created OAuth2 user via {}: {}", provider, email);
+            } else {
+                log.info("OAuth2 user exists ({}): {}", provider, email);
             }
         } catch (Exception e) {
-            logger.error("Error creating/retrieving user for OAuth2 provider: {}", provider, e);
+            log.error("OAuth2 provisioning failed for provider={} email={}", provider, email, e);
+            // You can redirect to an error page if you want:
+            response.sendRedirect("/login?error");
+            return;
         }
-        
-        // Redirect to dashboard after successful authentication
+
         response.sendRedirect("/dashboard");
+    }
+
+    private String toUsername(String raw) {
+        if (raw == null) return "user" + UUID.randomUUID().toString().substring(0, 8);
+        String cleaned = raw.toLowerCase(Locale.ROOT)
+                            .replaceAll("[^a-z0-9_\\-]", "");
+        if (cleaned.isBlank()) cleaned = "user" + UUID.randomUUID().toString().substring(0, 8);
+        return cleaned.length() > 32 ? cleaned.substring(0, 32) : cleaned;
     }
 }

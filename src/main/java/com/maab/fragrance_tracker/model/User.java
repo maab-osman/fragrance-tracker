@@ -13,8 +13,20 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
-// Validation annotations removed to disable server-side JSR-380 validation
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 
+/**
+ * Represents a user of the Fragrance Tracker application.
+ * 
+ * Includes authentication credentials, user profile information, and relationships
+ * to user's perfume collection and reviews. Uses JSR-380 validation annotations
+ * for data integrity.
+ * 
+ * @author Maab Osman
+ * @version 1.0
+ */
 @Entity
 @Table(name = "users")
 public class User {
@@ -23,11 +35,17 @@ public class User {
     private Long id;
     
     @Column(unique = true)
+    @NotBlank(message = "Username is required")
+    @Size(min = 3, max = 50, message = "Username must be between 3 and 50 characters")
     private String username;
     
     @Column(unique = true)
+    @NotBlank(message = "Email is required")
+    @Email(message = "Email should be valid")
     private String email;
     
+    @NotBlank(message = "Password is required")
+    @Size(min = 6, max = 100, message = "Password must be between 6 and 100 characters")
     private String password;
     
     private LocalDateTime createdAt;

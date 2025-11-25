@@ -3,7 +3,7 @@ package com.maab.fragrance_tracker.controller;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-// Validation removed: no BindingResult or @Valid usage
+import org.springframework.validation.BindingResult;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import jakarta.validation.Valid;
 
 import com.maab.fragrance_tracker.model.User;
 import com.maab.fragrance_tracker.service.UserService;
@@ -19,6 +20,15 @@ import com.maab.fragrance_tracker.service.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Handles user authentication flows including registration and login.
+ * 
+ * Provides endpoints for user registration, login, and dashboard access with
+ * full server-side validation and error handling for security and data integrity.
+ * 
+ * @author Maab Osman
+ * @version 1.0
+ */
 @Controller
 public class HomeController {
     private static final Logger logger = LoggerFactory.getLogger(HomeController.class);
@@ -43,7 +53,13 @@ public class HomeController {
     }
     
     @PostMapping("/register")
-    public String registerUser(@ModelAttribute("user") User user, Model model) {
+    public String registerUser(@Valid @ModelAttribute("user") User user, BindingResult result, Model model) {
+        // Server-side validation (JSR-380)
+        if (result.hasErrors()) {
+            logger.warn("Validation failed for user registration: {}", result.getAllErrors());
+            return "register";
+        }
+        
         try {
             userService.registerUser(user);
             return "redirect:/login?registered";

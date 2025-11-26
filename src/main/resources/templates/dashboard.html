@@ -8,7 +8,7 @@
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container">
-            <a class="navbar-brand" href="/dashboard">🎵 Fragrance Tracker</a>
+            <a class="navbar-brand" href="/dashboard">Fragrance Tracker</a>
             <div class="navbar-nav ms-auto">
                 <a class="nav-link" th:href="@{/logout}">Logout</a>
             </div>
@@ -43,7 +43,9 @@
                     <div class="card-body">
                         <h5 class="card-title">Discover</h5>
                         <p class="card-text">Find new fragrances</p>
-                        <a th:href="@{/discover}" class="btn btn-info">Browse</a>
+                        <!-- Check if user is admin -->
+                        <a th:href="@{/admin/discover}" class="btn btn-info" th:if="${#authorization.expression('hasRole(\"ADMIN\'')}">Browse (Admin)</a>
+                        <a th:href="@{/discover}" class="btn btn-info" th:unless="${#authorization.expression('hasRole(\"ADMIN\'')}">Browse</a>
                     </div>
                 </div>
             </div>

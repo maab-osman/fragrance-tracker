@@ -82,15 +82,32 @@ public class PerfumeService {
         return perfumeRepository.findAll();
     }
 
+    /**
+     * Finds random catalog perfumes (admin-added only).
+     * Only returns perfumes with user = null (admin catalog items).
+     */
     public List<Perfume> findRandom(int limit) {
         List<Perfume> all = perfumeRepository.findAll();
-        java.util.Collections.shuffle(all);
-        return all.stream().limit(limit).toList();
+        // Filter to only admin-added perfumes (user = null)
+        List<Perfume> catalogOnly = all.stream()
+            .filter(p -> p.getUser() == null)
+            .toList();
+        java.util.Collections.shuffle(catalogOnly);
+        return catalogOnly.stream().limit(limit).toList();
     }
 
+    /**
+     * Finds latest catalog perfumes (admin-added only).
+     * Only returns perfumes with user = null (admin catalog items).
+     */
     public List<Perfume> findLatest(int limit) {
-        org.springframework.data.domain.PageRequest pr = org.springframework.data.domain.PageRequest.of(0, limit, org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "id"));
-        return perfumeRepository.findAll(pr).getContent();
+        org.springframework.data.domain.PageRequest pr = org.springframework.data.domain.PageRequest.of(0, limit * 2, org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "id"));
+        List<Perfume> all = perfumeRepository.findAll(pr).getContent();
+        // Filter to only admin-added perfumes (user = null)
+        return all.stream()
+            .filter(p -> p.getUser() == null)
+            .limit(limit)
+            .toList();
     }
 
     /**
@@ -184,6 +201,17 @@ public Page<Perfume> findCatalog(Pageable pageable) {
 public boolean existsByNameBrandAndStatus(String name, String brand, String status) {
     return perfumeRepository.existsByNameAndBrandAndCollectionStatus(name, brand, status);
 }
+
+    /**
+     * Deletes a perfume by ID (admin-only operation).
+     * This removes the perfume from the catalog.
+     * 
+     * @param perfumeId the ID of the perfume to delete
+     */
+    public void deletePerfume(Long perfumeId) {
+        perfumeRepository.deleteById(perfumeId);
+    }
+
     public Perfume addPerfumeFromCatalogToUser(Long catalogPerfumeId, User user) {
         Perfume catalogPerfume = perfumeRepository.findById(catalogPerfumeId)
                 .orElseThrow(() -> new NoSuchElementException("Catalog perfume not found with id " + catalogPerfumeId));

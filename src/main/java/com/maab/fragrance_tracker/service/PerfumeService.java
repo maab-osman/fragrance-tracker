@@ -1,9 +1,13 @@
 package com.maab.fragrance_tracker.service;
 import java.util.Comparator;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -169,4 +173,35 @@ public class PerfumeService {
 
         return sorted;
     }
+
+    public Page<Perfume> findAllPaged(PageRequest of) {
+        return perfumeRepository.findAll(of);
+    }
+
+public Page<Perfume> findCatalog(Pageable pageable) {
+    return perfumeRepository.findAllByCollectionStatusOrderByIdDesc("CATALOG", pageable);
+}
+public boolean existsByNameBrandAndStatus(String name, String brand, String status) {
+    return perfumeRepository.existsByNameAndBrandAndCollectionStatus(name, brand, status);
+}
+    public Perfume addPerfumeFromCatalogToUser(Long catalogPerfumeId, User user) {
+        Perfume catalogPerfume = perfumeRepository.findById(catalogPerfumeId)
+                .orElseThrow(() -> new NoSuchElementException("Catalog perfume not found with id " + catalogPerfumeId));
+
+        Perfume personal = new Perfume();
+        personal.setName(catalogPerfume.getName());
+        personal.setBrand(catalogPerfume.getBrand());
+        personal.setDescription(catalogPerfume.getDescription());
+        personal.setSeason(catalogPerfume.getSeason());
+        personal.setOccasion(catalogPerfume.getOccasion());
+        personal.setFragranceNotes(catalogPerfume.getFragranceNotes());
+        
+        // this is the key difference: this perfume belongs to a specific user
+        personal.setUser(user);
+        personal.setCollectionStatus("OWNED"); // or "WISHLIST" depending on your logic
+
+        return perfumeRepository.save(personal);
+    }
+
+
 }

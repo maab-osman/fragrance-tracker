@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.maab.fragrance_tracker.model.Perfume;
 import com.maab.fragrance_tracker.model.Review;
@@ -29,7 +30,7 @@ public class PerfumeController {
 
     private final PerfumeService perfumeService;
     @Autowired
-    private final UserRepository userRepository; // <-- inject this
+    private final UserRepository userRepository; 
 
     public PerfumeController(PerfumeService perfumeService, UserRepository userRepository) {
         this.perfumeService = perfumeService;
@@ -168,5 +169,22 @@ public String addReview(@PathVariable Long id, @ModelAttribute Review review) {
     
     return "redirect:/discover";
 }
+public String addFromDiscoverToMyCollection(@PathVariable("id") Long perfumeId,
+                                                @AuthenticationPrincipal UserDetails principal,
+                                                RedirectAttributes redirectAttributes) {
+
+        if (principal == null) {
+            // just in case, but usually Spring will already redirect to login
+            return "redirect:/login";
+        }
+
+        User user = userRepository.findByUsername(principal.getUsername())
+                .orElseThrow(() -> new IllegalStateException("Logged in user not found"));
+
+        perfumeService.addPerfumeFromCatalogToUser(perfumeId, user);
+
+        redirectAttributes.addFlashAttribute("successMessage", "Perfume added to your collection!");
+        return "redirect:/my-collection"; // adjust to your actual route
+    }
 }
 

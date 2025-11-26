@@ -8,6 +8,13 @@ public class DiscoverPageController {
 
     @GetMapping("/discover")
     public String discoverPage() {
-        return "discover";
+        try {
+            System.out.println("[DEBUG] discoverPage() - Loading discover template");
+            return "discover";
+        } catch (Exception e) {
+            System.err.println("[ERROR] discoverPage() - Exception: " + e.getMessage());
+            e.printStackTrace();
+            return "redirect:/dashboard";
+        }
     }
 }

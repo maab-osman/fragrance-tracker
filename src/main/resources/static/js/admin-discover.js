@@ -28,11 +28,16 @@ document.addEventListener('DOMContentLoaded', function () {
     const content = document.getElementById('discoverContent');
     content.innerHTML = '<div class="text-center py-5">Loading…</div>';
     fetch(`/api/discover?mode=${mode}&limit=8`)
-      .then(r => r.json())
+      .then(r => {
+        if (!r.ok) {
+          throw new Error(`HTTP ${r.status}: ${r.statusText}`);
+        }
+        return r.json();
+      })
       .then(renderList)
       .catch(err => {
-        content.innerHTML = `<div class="alert alert-danger">Error loading suggestions</div>`;
-        console.error(err);
+        console.error('Error loading discover:', err);
+        content.innerHTML = `<div class="alert alert-danger"><strong>Error loading perfumes:</strong> ${err.message}</div>`;
       });
   }
 

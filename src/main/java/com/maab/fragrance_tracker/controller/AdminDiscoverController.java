@@ -1,5 +1,7 @@
 package com.maab.fragrance_tracker.controller;
 
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Controller;
@@ -7,8 +9,6 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.http.ResponseEntity;
-import org.springframework.http.HttpStatus;
 
 import com.maab.fragrance_tracker.model.User;
 import com.maab.fragrance_tracker.repository.UserRepository;
@@ -37,12 +37,31 @@ public class AdminDiscoverController {
      */
     @GetMapping("/admin/discover")
     public String adminDiscover() {
-        User currentUser = getCurrentUser();
-        // Verify user is admin
-        if (currentUser == null || !currentUser.isAdmin()) {
-            return "redirect:/discover";
+        try {
+            User currentUser = getCurrentUser();
+            System.out.println("[DEBUG] adminDiscover() - Current user: " + currentUser);
+            
+            // Verify user is admin
+            if (currentUser == null) {
+                System.out.println("[DEBUG] adminDiscover() - Current user is null, redirecting to login");
+                return "redirect:/login";
+            }
+            
+            boolean isAdmin = currentUser.isAdmin();
+            System.out.println("[DEBUG] adminDiscover() - User: " + currentUser.getUsername() + ", isAdmin: " + isAdmin);
+            
+            if (!isAdmin) {
+                System.out.println("[DEBUG] adminDiscover() - User is not admin, redirecting to discover");
+                return "redirect:/discover";
+            }
+            
+            System.out.println("[DEBUG] adminDiscover() - User is admin, loading template");
+            return "admin-discover";
+        } catch (Exception e) {
+            System.err.println("[ERROR] adminDiscover() - Exception: " + e.getMessage());
+            e.printStackTrace();
+            return "redirect:/error";
         }
-        return "admin-discover";
     }
 
     /**
@@ -103,11 +122,31 @@ public class AdminDiscoverController {
      * Gets the currently authenticated user from Spring Security context.
      */
     private User getCurrentUser() {
-        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        if (principal instanceof UserDetails) {
-            String username = ((UserDetails) principal).getUsername();
-            return userRepository.findByUsername(username).orElse(null);
+        try {
+            var authentication = SecurityContextHolder.getContext().getAuthentication();
+            
+            if (authentication == null) {
+                System.out.println("[DEBUG] getCurrentUser() - Authentication is null");
+                return null;
+            }
+            
+            Object principal = authentication.getPrincipal();
+            System.out.println("[DEBUG] getCurrentUser() - Principal type: " + (principal != null ? principal.getClass().getSimpleName() : "null"));
+            
+            if (principal instanceof UserDetails) {
+                String username = ((UserDetails) principal).getUsername();
+                System.out.println("[DEBUG] getCurrentUser() - Looking up user: " + username);
+                var user = userRepository.findByUsername(username);
+                System.out.println("[DEBUG] getCurrentUser() - User found: " + user.isPresent());
+                return user.orElse(null);
+            }
+            
+            System.out.println("[DEBUG] getCurrentUser() - Principal is not UserDetails");
+            return null;
+        } catch (Exception e) {
+            System.err.println("[ERROR] getCurrentUser() - Exception: " + e.getMessage());
+            e.printStackTrace();
+            return null;
         }
-        return null;
     }
 }

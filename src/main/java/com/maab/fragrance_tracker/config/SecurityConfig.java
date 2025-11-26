@@ -38,8 +38,8 @@ public class SecurityConfig {
               .permitAll()
           );
 
-        // CSRF: disable for API endpoints, allow for H2 console
-        http.csrf(csrf -> csrf.ignoringRequestMatchers("/h2-console/**", "/api/**"));
+        // CSRF: disable for API endpoints and admin edit endpoint, allow for H2 console
+        http.csrf(csrf -> csrf.ignoringRequestMatchers("/h2-console/**", "/api/**", "/admin/catalog/edit"));
         http.headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()));
 
         return http.build();

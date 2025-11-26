@@ -8,7 +8,10 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import com.maab.fragrance_tracker.model.Perfume;
 import com.maab.fragrance_tracker.service.PerfumeService;
@@ -30,14 +33,26 @@ public class AdminController {
                               @RequestParam(defaultValue = "20") int size,
                               Model model) {
 
-        // If you have a service/repo method for catalog-only:
-        // Page<Perfume> catalog = perfumeService.findCatalog(PageRequest.of(page, size));
-        // If not, use all for now:
-        Page<Perfume> catalog = perfumeService.findAllPaged(PageRequest.of(page, size));
+        try {
+            System.out.println("[DEBUG] catalogPage() - Loading admin catalog, page: " + page + ", size: " + size);
+            
+            // If you have a service/repo method for catalog-only:
+            // Page<Perfume> catalog = perfumeService.findCatalog(PageRequest.of(page, size));
+            // If not, use all for now:
+            Page<Perfume> catalog = perfumeService.findAllPaged(PageRequest.of(page, size));
 
-        model.addAttribute("perfumes", catalog.getContent());
-        model.addAttribute("page", catalog);
-        return "admin/catalog";
+            System.out.println("[DEBUG] catalogPage() - Found " + catalog.getContent().size() + " perfumes");
+            
+            model.addAttribute("perfumes", catalog.getContent());
+            model.addAttribute("page", catalog);
+            
+            System.out.println("[DEBUG] catalogPage() - Returning admin/catalog view");
+            return "admin/catalog";
+        } catch (Exception e) {
+            System.err.println("[ERROR] catalogPage() - Exception: " + e.getMessage());
+            model.addAttribute("error", "Failed to load catalog: " + e.getMessage());
+            return "error/500";
+        }
     }
 
     @PostMapping("/catalog")

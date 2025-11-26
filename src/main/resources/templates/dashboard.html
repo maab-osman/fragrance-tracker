@@ -44,8 +44,8 @@
                         <h5 class="card-title">Discover</h5>
                         <p class="card-text">Find new fragrances</p>
                         <!-- Check if user is admin -->
-                        <a th:href="@{/admin/discover}" class="btn btn-info" th:if="${#authorization.expression('hasRole(\"ADMIN\'')}">Browse (Admin)</a>
-                        <a th:href="@{/discover}" class="btn btn-info" th:unless="${#authorization.expression('hasRole(\"ADMIN\'')}">Browse</a>
+                        <a th:href="@{/admin/discover}" class="btn btn-info" th:if="${#authorization.expression('hasRole(&quot;ADMIN&quot;)')}">Browse (Admin)</a>
+                        <a th:href="@{/discover}" class="btn btn-info" th:unless="${#authorization.expression('hasRole(&quot;ADMIN&quot;)')}">Browse</a>
                     </div>
                 </div>
             </div>

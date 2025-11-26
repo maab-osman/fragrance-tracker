@@ -32,7 +32,6 @@ public class LogoutController {
             }
         } catch (Exception e) {
             System.err.println("[ERROR] logout() - Exception: " + e.getMessage());
-            e.printStackTrace();
         }
         return "redirect:/login";
     }

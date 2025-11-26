@@ -66,7 +66,6 @@ public class DiscoverController {
             return ResponseEntity.ok(dtos);
         } catch (Exception e) {
             System.err.println("[ERROR] discover() - Exception: " + e.getMessage());
-            e.printStackTrace();
             return ResponseEntity.status(500).body(java.util.Collections.emptyList());
         }
     }
@@ -120,61 +119,83 @@ public class DiscoverController {
 
     @GetMapping("/api/perfumes/{id}/reviews")
     public ResponseEntity<?> getReviews(@PathVariable Long id) {
-        var opt = perfumeService.findById(id);
-        if (opt.isEmpty()) {
-            return ResponseEntity.badRequest().body(Map.of("error", "Perfume not found"));
+        try {
+            System.out.println("[DEBUG] getReviews() - perfumeId: " + id);
+            var opt = perfumeService.findById(id);
+            if (opt.isEmpty()) {
+                System.out.println("[ERROR] getReviews() - Perfume not found: " + id);
+                return ResponseEntity.badRequest().body(Map.of("error", "Perfume not found"));
+            }
+            Perfume perfume = opt.get();
+            List<Review> reviews = reviewService.getReviewsByPerfume(perfume);
+            double avgRating = reviewService.getAverageRating(perfume);
+            
+            System.out.println("[DEBUG] getReviews() - found " + reviews.size() + " reviews");
+            
+            List<Map<String, Object>> reviewDtos = reviews.stream().map(r -> {
+                Map<String, Object> dto = new HashMap<>();
+                dto.put("id", r.getId());
+                dto.put("username", r.getUser().getUsername());
+                dto.put("rating", r.getRating());
+                dto.put("comment", r.getComment());
+                dto.put("createdAt", r.getCreatedAt().toString());
+                return dto;
+            }).collect(Collectors.toList());
+            
+            return ResponseEntity.ok(Map.of(
+                "reviews", reviewDtos,
+                "averageRating", avgRating,
+                "totalReviews", reviews.size()
+            ));
+        } catch (Exception e) {
+            System.err.println("[ERROR] getReviews() - Exception: " + e.getMessage());
+            return ResponseEntity.status(500).body(Map.of("error", e.getMessage()));
         }
-        Perfume perfume = opt.get();
-        List<Review> reviews = reviewService.getReviewsByPerfume(perfume);
-        double avgRating = reviewService.getAverageRating(perfume);
-        
-        List<Map<String, Object>> reviewDtos = reviews.stream().map(r -> {
-            Map<String, Object> dto = new HashMap<>();
-            dto.put("id", r.getId());
-            dto.put("username", r.getUser().getUsername());
-            dto.put("rating", r.getRating());
-            dto.put("comment", r.getComment());
-            dto.put("createdAt", r.getCreatedAt().toString());
-            return dto;
-        }).collect(Collectors.toList());
-        
-        return ResponseEntity.ok(Map.of(
-            "reviews", reviewDtos,
-            "averageRating", avgRating,
-            "totalReviews", reviews.size()
-        ));
     }
 
     @PostMapping("/api/perfumes/{id}/reviews")
     public ResponseEntity<?> addReview(@PathVariable Long id, @RequestBody Map<String, Object> body) {
-        User currentUser = getCurrentUser();
-        if (currentUser == null) {
-            return ResponseEntity.status(401).body(Map.of("error", "Unauthorized"));
+        try {
+            System.out.println("[DEBUG] addReview() - perfumeId: " + id);
+            User currentUser = getCurrentUser();
+            if (currentUser == null) {
+                System.out.println("[ERROR] addReview() - User not authenticated");
+                return ResponseEntity.status(401).body(Map.of("error", "Unauthorized"));
+            }
+            
+            System.out.println("[DEBUG] addReview() - User: " + currentUser.getUsername());
+            var opt = perfumeService.findById(id);
+            if (opt.isEmpty()) {
+                System.out.println("[ERROR] addReview() - Perfume not found: " + id);
+                return ResponseEntity.badRequest().body(Map.of("error", "Perfume not found"));
+            }
+            
+            Perfume perfume = opt.get();
+            int rating = ((Number) body.get("rating")).intValue();
+            String comment = (String) body.get("comment");
+            
+            System.out.println("[DEBUG] addReview() - rating: " + rating + ", comment: " + comment);
+            
+            if (rating < 1 || rating > 5) {
+                System.out.println("[ERROR] addReview() - Invalid rating: " + rating);
+                return ResponseEntity.badRequest().body(Map.of("error", "Rating must be between 1 and 5"));
+            }
+            
+            Review review = new Review();
+            review.setUser(currentUser);
+            review.setPerfume(perfume);
+            review.setRating(rating);
+            review.setComment(comment);
+            review.setCreatedAt(LocalDateTime.now());
+            
+            reviewService.saveReview(review);
+            
+            System.out.println("[DEBUG] addReview() - Review saved successfully");
+            return ResponseEntity.ok(Map.of("success", true, "message", "Review added successfully"));
+        } catch (Exception e) {
+            System.err.println("[ERROR] addReview() - Exception: " + e.getMessage());
+            return ResponseEntity.status(500).body(Map.of("error", e.getMessage()));
         }
-        
-        var opt = perfumeService.findById(id);
-        if (opt.isEmpty()) {
-            return ResponseEntity.badRequest().body(Map.of("error", "Perfume not found"));
-        }
-        
-        Perfume perfume = opt.get();
-        int rating = ((Number) body.get("rating")).intValue();
-        String comment = (String) body.get("comment");
-        
-        if (rating < 1 || rating > 5) {
-            return ResponseEntity.badRequest().body(Map.of("error", "Rating must be between 1 and 5"));
-        }
-        
-        Review review = new Review();
-        review.setUser(currentUser);
-        review.setPerfume(perfume);
-        review.setRating(rating);
-        review.setComment(comment);
-        review.setCreatedAt(LocalDateTime.now());
-        
-        reviewService.saveReview(review);
-        
-        return ResponseEntity.ok(Map.of("success", true, "message", "Review added successfully"));
     }
 
     private User getCurrentUser() {

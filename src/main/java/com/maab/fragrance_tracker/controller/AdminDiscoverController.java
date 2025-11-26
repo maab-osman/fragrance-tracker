@@ -59,7 +59,6 @@ public class AdminDiscoverController {
             return "admin-discover";
         } catch (Exception e) {
             System.err.println("[ERROR] adminDiscover() - Exception: " + e.getMessage());
-            e.printStackTrace();
             return "redirect:/error";
         }
     }
@@ -133,8 +132,8 @@ public class AdminDiscoverController {
             Object principal = authentication.getPrincipal();
             System.out.println("[DEBUG] getCurrentUser() - Principal type: " + (principal != null ? principal.getClass().getSimpleName() : "null"));
             
-            if (principal instanceof UserDetails) {
-                String username = ((UserDetails) principal).getUsername();
+            if (principal instanceof UserDetails userDetails) {
+                String username = userDetails.getUsername();
                 System.out.println("[DEBUG] getCurrentUser() - Looking up user: " + username);
                 var user = userRepository.findByUsername(username);
                 System.out.println("[DEBUG] getCurrentUser() - User found: " + user.isPresent());
@@ -145,7 +144,6 @@ public class AdminDiscoverController {
             return null;
         } catch (Exception e) {
             System.err.println("[ERROR] getCurrentUser() - Exception: " + e.getMessage());
-            e.printStackTrace();
             return null;
         }
     }

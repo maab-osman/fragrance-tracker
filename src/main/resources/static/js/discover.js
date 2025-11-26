@@ -144,9 +144,17 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   function loadReviews(perfumeId) {
+    console.log('[DEBUG] loadReviews() - perfumeId:', perfumeId);
     fetch(`/api/perfumes/${perfumeId}/reviews`)
-      .then(r => r.json())
+      .then(r => {
+        console.log('[DEBUG] loadReviews() - response status:', r.status);
+        if (!r.ok) {
+          throw new Error(`HTTP ${r.status}: ${r.statusText}`);
+        }
+        return r.json();
+      })
       .then(data => {
+        console.log('[DEBUG] loadReviews() - data received:', data);
         const reviews = data.reviews || [];
         const avgRating = data.averageRating || 0;
         const totalReviews = data.totalReviews || 0;
@@ -166,8 +174,8 @@ document.addEventListener('DOMContentLoaded', function () {
         renderReviews(reviews);
       })
       .catch(err => {
-        console.error('Error loading reviews:', err);
-        document.getElementById('reviewsList').innerHTML = '<div class="alert alert-danger">Error loading reviews</div>';
+        console.error('[ERROR] loadReviews() failed:', err);
+        document.getElementById('reviewsList').innerHTML = '<div class="alert alert-danger">Error loading reviews: ' + escapeHtml(err.message) + '</div>';
       });
   }
 
@@ -239,6 +247,8 @@ document.addEventListener('DOMContentLoaded', function () {
     const rating = parseInt(document.getElementById('selectedRating').value);
     const comment = document.getElementById('commentInput').value;
     
+    console.log('[DEBUG] Submitting review - rating:', rating, 'comment:', comment, 'perfumeId:', currentPerfumeId);
+    
     if (rating === 0) {
       showToast('Please select a rating', 'warning');
       return;
@@ -254,6 +264,7 @@ document.addEventListener('DOMContentLoaded', function () {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ rating, comment })
     }).then(r => {
+      console.log('[DEBUG] Review POST response status:', r.status);
       if (r.ok) {
         showToast('Review posted successfully!', 'success');
         document.getElementById('commentInput').value = '';
@@ -264,11 +275,14 @@ document.addEventListener('DOMContentLoaded', function () {
       } else if (r.status === 401) {
         showToast('Please log in to post a review', 'warning');
       } else {
-        showToast('Could not post review', 'danger');
+        return r.json().then(data => {
+          console.error('[ERROR] Review POST failed:', data);
+          showToast('Could not post review: ' + (data.error || data.message || 'Unknown error'), 'danger');
+        });
       }
     }).catch(err => {
-      console.error(err);
-      showToast('Network error', 'danger');
+      console.error('[ERROR] Review POST exception:', err);
+      showToast('Network error: ' + err.message, 'danger');
     });
   });
 

@@ -13,7 +13,6 @@ public class DiscoverPageController {
             return "discover";
         } catch (Exception e) {
             System.err.println("[ERROR] discoverPage() - Exception: " + e.getMessage());
-            e.printStackTrace();
             return "redirect:/dashboard";
         }
     }

@@ -18,9 +18,10 @@
         .perfume-title { flex-grow: 1; }
         .perfume-title h5 { margin: 0; color: #2c3e50; font-weight: 600; }
         .perfume-title .text-muted { font-size: 0.9rem; }
-        .edit-form { display: none; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #ddd; }
-        .edit-form.active { display: block; }
-        .btn-edit { background-color: #17a2b8; }
+        .edit-form { display: none; margin-top: 1rem; padding: 1rem; background-color: #f9f9f9; border: 2px solid #17a2b8; border-radius: 0.5rem; border-top: 3px solid #17a2b8; }
+        .edit-form.active { display: block; animation: slideDown 0.3s ease-out; }
+        @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+        .btn-edit { background-color: #17a2b8; color: white; }
         .btn-edit:hover { background-color: #138496; }
         .back-btn { margin-bottom: 1rem; }
     </style>
@@ -151,12 +152,31 @@
 
 <script>
     document.querySelectorAll('.edit-toggle').forEach(btn => {
-        btn.addEventListener('click', function() {
-            const id = this.getAttribute('data-id') || this.getAttribute('data-id');
-            const form = document.getElementById(id);
-            if (form) {
-                form.classList.toggle('active');
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const id = this.getAttribute('data-id');
+            if (!id) {
+                console.warn('[WARN] No data-id found on edit button');
+                return;
             }
+            
+            const form = document.getElementById(id);
+            if (!form) {
+                console.error('[ERROR] Could not find form with id:', id);
+                return;
+            }
+            
+            // Toggle the form
+            const isActive = form.classList.contains('active');
+            form.classList.toggle('active');
+            
+            // Update button text to show state
+            this.textContent = isActive ? 'Edit' : 'Close Form';
+            this.classList.toggle('active', !isActive);
+            
+            console.log('[DEBUG] Form toggled for', id, 'new state:', form.classList.contains('active'));
         });
     });
 </script>

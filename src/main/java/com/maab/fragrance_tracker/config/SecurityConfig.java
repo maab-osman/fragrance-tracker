@@ -38,8 +38,8 @@ public class SecurityConfig {
               .permitAll()
           );
 
-        // Dev convenience for H2 console; keep it narrow
-        http.csrf(csrf -> csrf.ignoringRequestMatchers("/h2-console/**"));
+        // CSRF: disable for API endpoints, allow for H2 console
+        http.csrf(csrf -> csrf.ignoringRequestMatchers("/h2-console/**", "/api/**"));
         http.headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()));
 
         return http.build();

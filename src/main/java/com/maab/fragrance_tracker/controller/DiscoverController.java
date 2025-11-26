@@ -45,7 +45,7 @@ public class DiscoverController {
             User currentUser = getCurrentUser();
             System.out.println("[DEBUG] discover() - currentUser: " + (currentUser != null ? currentUser.getUsername() : "null"));
             
-            List<Perfume> list = new java.util.ArrayList<>();
+            List<Perfume> list;
             try {
                 list = switch (mode) {
                     case "random" -> {
@@ -63,7 +63,6 @@ public class DiscoverController {
                 };
             } catch (Exception e) {
                 System.err.println("[ERROR] discover() - Exception loading mode " + mode + ": " + e.getMessage());
-                e.printStackTrace();
                 list = java.util.Collections.emptyList();
             }
 

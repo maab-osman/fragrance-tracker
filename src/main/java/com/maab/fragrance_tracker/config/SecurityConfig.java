@@ -1,5 +1,6 @@
 package com.maab.fragrance_tracker.config;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -15,11 +16,8 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 @EnableWebSecurity
 public class SecurityConfig {
 
-    private final OAuth2SuccessHandler oauth2SuccessHandler;
-
-    public SecurityConfig(OAuth2SuccessHandler oauth2SuccessHandler) {
-        this.oauth2SuccessHandler = oauth2SuccessHandler;
-    }
+    @Autowired(required = false)
+    private OAuth2SuccessHandler oauth2SuccessHandler;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -39,15 +37,17 @@ public class SecurityConfig {
               .permitAll()
           );
         
-        // OAuth2 is optional - only configure if available
-        try {
-            http.oauth2Login(oauth -> oauth
-                .loginPage("/login")
-                .defaultSuccessUrl("/dashboard", true)
-                .successHandler(oauth2SuccessHandler)
-            );
-        } catch (Exception e) {
-            // OAuth2 not configured, skip it
+        // OAuth2 is optional - only configure if handler is available
+        if (oauth2SuccessHandler != null) {
+            try {
+                http.oauth2Login(oauth -> oauth
+                    .loginPage("/login")
+                    .defaultSuccessUrl("/dashboard", true)
+                    .successHandler(oauth2SuccessHandler)
+                );
+            } catch (Exception e) {
+                // OAuth2 not available, skip it
+            }
         }
         
         http.logout(logout -> logout

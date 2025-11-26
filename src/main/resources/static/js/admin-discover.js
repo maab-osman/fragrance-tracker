@@ -54,9 +54,14 @@ document.addEventListener('DOMContentLoaded', function () {
       col.className = 'col-md-6';
       col.innerHTML = `
         <div class="card h-100">
-          <button class="btn btn-sm btn-danger admin-delete-btn" data-id="${p.id}" title="Delete this perfume from catalog">
-            <i class="bi bi-trash"></i> Delete
-          </button>
+          <div class="position-absolute top-0 end-0 p-2 d-flex gap-2">
+            <button class="btn btn-sm btn-info admin-edit-btn" data-id="${p.id}" title="Edit this perfume">
+              <i class="bi bi-pencil"></i> Edit
+            </button>
+            <button class="btn btn-sm btn-danger admin-delete-btn" data-id="${p.id}" title="Delete this perfume from catalog">
+              <i class="bi bi-trash"></i> Delete
+            </button>
+          </div>
           <div class="row g-0">
             <div class="col-4 bg-light d-flex align-items-center justify-content-center" style="min-height:120px">
               <div class="text-muted">No image</div>
@@ -90,6 +95,17 @@ document.addEventListener('DOMContentLoaded', function () {
         if (confirm('Are you sure you want to delete this perfume from the catalog? This cannot be undone.')) {
           deletePerfume(id);
         }
+      });
+    });
+
+    // Wire admin edit buttons
+    document.getElementById('discoverContent').querySelectorAll('.admin-edit-btn').forEach(btn => {
+      btn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        const id = this.getAttribute('data-id');
+        console.log('[DEBUG] Edit button clicked for perfume:', id);
+        // Open the details modal, which we'll enhance to support editing
+        showEditModal(id);
       });
     });
 
@@ -350,4 +366,137 @@ document.addEventListener('DOMContentLoaded', function () {
       showToast('Network error', 'danger');
     });
   });
+
+  // Admin Edit Modal Function
+  function showEditModal(perfumeId) {
+    // Create a modal for editing
+    const editModal = document.createElement('div');
+    editModal.className = 'modal fade';
+    editModal.id = 'editModal';
+    editModal.tabIndex = '-1';
+    editModal.innerHTML = `
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header bg-primary text-white">
+            <h5 class="modal-title">Edit Perfume</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <form id="editForm">
+              <input type="hidden" id="editPerfumeId" value="${perfumeId}">
+              
+              <div class="mb-3">
+                <label for="editName" class="form-label">Name *</label>
+                <input type="text" class="form-control" id="editName" required>
+              </div>
+              
+              <div class="mb-3">
+                <label for="editBrand" class="form-label">Brand *</label>
+                <input type="text" class="form-control" id="editBrand" required>
+              </div>
+              
+              <div class="mb-3">
+                <label for="editDescription" class="form-label">Description</label>
+                <textarea class="form-control" id="editDescription" rows="3"></textarea>
+              </div>
+              
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label for="editSeason" class="form-label">Season</label>
+                  <input type="text" class="form-control" id="editSeason" placeholder="e.g., Summer, Winter">
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label for="editOccasion" class="form-label">Occasion</label>
+                  <input type="text" class="form-control" id="editOccasion" placeholder="e.g., Casual, Formal">
+                </div>
+              </div>
+              
+              <div class="mb-3">
+                <label for="editNotes" class="form-label">Fragrance Notes</label>
+                <input type="text" class="form-control" id="editNotes" placeholder="Comma-separated: citrus, musk, wood">
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="button" class="btn btn-primary" id="saveEditBtn">Save Changes</button>
+          </div>
+        </div>
+      </div>
+    `;
+    
+    // Remove existing modal if any
+    const existingModal = document.getElementById('editModal');
+    if (existingModal) existingModal.remove();
+    
+    document.body.appendChild(editModal);
+    
+    // Load perfume data from details modal or fetch it
+    fetch(`/api/perfumes/${perfumeId}`)
+      .then(r => r.json())
+      .then(perfume => {
+        console.log('[DEBUG] Fetched perfume for editing:', perfume);
+        document.getElementById('editName').value = perfume.name || '';
+        document.getElementById('editBrand').value = perfume.brand || '';
+        document.getElementById('editDescription').value = perfume.description || '';
+        document.getElementById('editSeason').value = perfume.season || '';
+        document.getElementById('editOccasion').value = perfume.occasion || '';
+        document.getElementById('editNotes').value = (perfume.fragranceNotes || []).join(', ');
+      })
+      .catch(err => {
+        console.error('[ERROR] Failed to load perfume data:', err);
+        showToast('Failed to load perfume details', 'danger');
+      });
+    
+    // Handle save button
+    document.getElementById('saveEditBtn').addEventListener('click', function() {
+      const id = document.getElementById('editPerfumeId').value;
+      const name = document.getElementById('editName').value.trim();
+      const brand = document.getElementById('editBrand').value.trim();
+      
+      if (!name || !brand) {
+        showToast('Name and Brand are required', 'warning');
+        return;
+      }
+      
+      const formData = new FormData();
+      formData.append('id', id);
+      formData.append('name', name);
+      formData.append('brand', brand);
+      formData.append('description', document.getElementById('editDescription').value.trim());
+      formData.append('season', document.getElementById('editSeason').value.trim());
+      formData.append('occasion', document.getElementById('editOccasion').value.trim());
+      formData.append('notes', document.getElementById('editNotes').value.trim());
+      
+      console.log('[DEBUG] Saving perfume edits for ID:', id);
+      
+      fetch('/admin/catalog/edit', {
+        method: 'POST',
+        body: formData
+      })
+      .then(r => {
+        if (r.ok) {
+          console.log('[DEBUG] Edit successful, closing modal');
+          showToast('Perfume updated successfully!', 'success');
+          const modal = bootstrap.Modal.getInstance(editModal);
+          if (modal) modal.hide();
+          // Reload the discover list
+          const activeMode = document.querySelector('[data-mode].active');
+          const mode = activeMode ? activeMode.getAttribute('data-mode') : 'recommended';
+          loadDiscover(mode);
+        } else {
+          showToast('Failed to save changes', 'danger');
+        }
+      })
+      .catch(err => {
+        console.error('[ERROR] Save failed:', err);
+        showToast('Error saving changes', 'danger');
+      });
+    });
+    
+    // Show the modal
+    const modal = new bootstrap.Modal(editModal);
+    modal.show();
+  }
 });
+

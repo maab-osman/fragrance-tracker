@@ -6,7 +6,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -91,19 +90,6 @@ public class PerfumeRestController {
         updated.setUser(existing.getUser());
         Perfume saved = perfumeService.save(updated);
         return ResponseEntity.ok(saved);
-    }
-
-    /**
-     * DELETE /api/perfumes/{id} - Delete a perfume.
-     */
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deletePerfume(@PathVariable Long id) {
-        var existingOpt = perfumeService.findById(id);
-        if (existingOpt.isEmpty()) {
-            return ResponseEntity.notFound().build();
-        }
-        perfumeService.deleteById(id);
-        return ResponseEntity.noContent().build();
     }
 
     /**

@@ -37,13 +37,20 @@ public class SecurityConfig {
               .loginPage("/login")
               .defaultSuccessUrl("/dashboard", true)
               .permitAll()
-          )
-          .oauth2Login(oauth -> oauth
-              .loginPage("/login")
-              .defaultSuccessUrl("/dashboard", true)
-              .successHandler(oauth2SuccessHandler)
-          )
-          .logout(logout -> logout
+          );
+        
+        // OAuth2 is optional - only configure if available
+        try {
+            http.oauth2Login(oauth -> oauth
+                .loginPage("/login")
+                .defaultSuccessUrl("/dashboard", true)
+                .successHandler(oauth2SuccessHandler)
+            );
+        } catch (Exception e) {
+            // OAuth2 not configured, skip it
+        }
+        
+        http.logout(logout -> logout
               .logoutSuccessUrl("/")
               .permitAll()
           );

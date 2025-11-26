@@ -1,36 +1,39 @@
 package com.maab.fragrance_tracker.controller;
 
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
+
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 /**
  * Handles logout requests.
  * 
  * Spring Security requires logout to be a POST request for security reasons (CSRF protection).
  * However, users typically click links (GET requests). This controller provides a GET endpoint
- * that shows a logout confirmation form, which then POSTs to Spring Security's /logout endpoint.
+ * that performs the logout and redirects to login.
  */
 @Controller
 public class LogoutController {
 
     /**
-     * Displays logout confirmation page.
-     * This handles GET /logout requests and shows a simple confirmation before actual logout.
+     * Handles GET /logout requests.
+     * Performs logout via Spring Security and redirects to login page.
      */
     @GetMapping("/logout")
-    public String showLogoutForm() {
-        return "redirect:/dashboard";
-    }
-
-    /**
-     * Actually performs the logout via Spring Security.
-     * This will be handled by Spring Security's LogoutFilter.
-     */
-    @PostMapping("/logout")
-    public String logout() {
-        // Spring Security's LogoutFilter will handle this
-        // This method is here for clarity, but logout happens via filter chain
-        return "redirect:/";
+    public String logout(HttpServletRequest request, HttpServletResponse response) {
+        try {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            if (auth != null) {
+                new SecurityContextLogoutHandler().logout(request, response, auth);
+            }
+        } catch (Exception e) {
+            System.err.println("[ERROR] logout() - Exception: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return "redirect:/login";
     }
 }

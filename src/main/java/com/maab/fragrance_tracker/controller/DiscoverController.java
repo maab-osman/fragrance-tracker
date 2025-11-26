@@ -45,12 +45,27 @@ public class DiscoverController {
             User currentUser = getCurrentUser();
             System.out.println("[DEBUG] discover() - currentUser: " + (currentUser != null ? currentUser.getUsername() : "null"));
             
-            List<Perfume> list;
-            list = switch (mode) {
-                case "random" -> perfumeService.findRandom(limit);
-                case "trending" -> perfumeService.findLatest(limit);
-                default -> perfumeService.recommendForUser(currentUser, limit);
-            };
+            List<Perfume> list = new java.util.ArrayList<>();
+            try {
+                list = switch (mode) {
+                    case "random" -> {
+                        System.out.println("[DEBUG] discover() - loading random mode");
+                        yield perfumeService.findRandom(limit);
+                    }
+                    case "trending" -> {
+                        System.out.println("[DEBUG] discover() - loading trending mode");
+                        yield perfumeService.findLatest(limit);
+                    }
+                    default -> {
+                        System.out.println("[DEBUG] discover() - loading recommended mode");
+                        yield perfumeService.recommendForUser(currentUser, limit);
+                    }
+                };
+            } catch (Exception e) {
+                System.err.println("[ERROR] discover() - Exception loading mode " + mode + ": " + e.getMessage());
+                e.printStackTrace();
+                list = java.util.Collections.emptyList();
+            }
 
             System.out.println("[DEBUG] discover() - found " + list.size() + " perfumes");
             

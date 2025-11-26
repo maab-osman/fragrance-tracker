@@ -103,7 +103,7 @@
                     <small th:if="${p.description}" class="d-block text-muted mt-1" th:text="${p.description}"></small>
                 </div>
                 <div class="btn-group ms-3">
-                    <button type="button" class="btn btn-sm btn-edit edit-toggle" data-id="p_edit_">Edit</button>
+                    <button type="button" class="btn btn-sm btn-edit edit-toggle" th:data-id="'p_edit_' + ${p.id}">Edit</button>
                     <form th:action="@{/admin/catalog/delete}" method="post" class="d-inline" style="margin: 0;">
                         <input type="hidden" name="id" th:value="${p.id}" />
                         <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Delete this perfume?')">Delete</button>

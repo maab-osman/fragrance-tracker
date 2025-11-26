@@ -1,4 +1,4 @@
-FROM openjdk:17-jdk-slim
+FROM eclipse-temurin:17-jdk-focal AS builder
 
 WORKDIR /app
 
@@ -17,12 +17,12 @@ COPY src src
 RUN ./mvnw -B clean package -DskipTests
 
 # Use slim JRE for runtime
-FROM openjdk:17-jdk-slim
+FROM eclipse-temurin:17-jre-focal
 
 WORKDIR /app
 
 # Copy JAR from builder
-COPY --from=0 /app/target/fragrance-tracker-0.0.1-SNAPSHOT.jar fragrance-tracker.jar
+COPY --from=builder /app/target/fragrance-tracker-0.0.1-SNAPSHOT.jar fragrance-tracker.jar
 
 EXPOSE 8443 8080
 

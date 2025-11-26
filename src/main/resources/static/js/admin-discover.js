@@ -2,6 +2,15 @@
  * Admin Discovery Page Script
  * Allows admins to view catalog perfumes and delete them or their reviews
  */
+
+// Helper function to get CSRF token from cookies
+function getCookie(name) {
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) return parts.pop().split(';').shift();
+  return null;
+}
+
 document.addEventListener('DOMContentLoaded', function () {
   const content = document.getElementById('discoverContent');
   if (!content) return; // not on admin discover page
@@ -403,17 +412,49 @@ document.addEventListener('DOMContentLoaded', function () {
               <div class="row">
                 <div class="col-md-6 mb-3">
                   <label for="editSeason" class="form-label">Season</label>
-                  <input type="text" class="form-control" id="editSeason" placeholder="e.g., Summer, Winter">
+                  <select class="form-select" id="editSeason">
+                    <option value="">Select Season...</option>
+                    <option value="Spring">Spring</option>
+                    <option value="Summer">Summer</option>
+                    <option value="Fall">Fall</option>
+                    <option value="Winter">Winter</option>
+                  </select>
                 </div>
                 <div class="col-md-6 mb-3">
                   <label for="editOccasion" class="form-label">Occasion</label>
-                  <input type="text" class="form-control" id="editOccasion" placeholder="e.g., Casual, Formal">
+                  <select class="form-select" id="editOccasion">
+                    <option value="">Select Occasion...</option>
+                    <option value="Casual">Casual</option>
+                    <option value="Formal">Formal</option>
+                    <option value="Work">Work</option>
+                    <option value="Evening">Evening</option>
+                    <option value="Sport">Sport</option>
+                  </select>
                 </div>
               </div>
               
               <div class="mb-3">
                 <label for="editNotes" class="form-label">Fragrance Notes</label>
-                <input type="text" class="form-control" id="editNotes" placeholder="Comma-separated: citrus, musk, wood">
+                <div class="btn-group" style="width: 100%;" role="group">
+                  <input type="checkbox" class="btn-check" id="citrus" value="Citrus">
+                  <label class="btn btn-outline-primary" for="citrus">Citrus</label>
+                  
+                  <input type="checkbox" class="btn-check" id="floral" value="Floral">
+                  <label class="btn btn-outline-primary" for="floral">Floral</label>
+                  
+                  <input type="checkbox" class="btn-check" id="woody" value="Woody">
+                  <label class="btn btn-outline-primary" for="woody">Woody</label>
+                  
+                  <input type="checkbox" class="btn-check" id="musk" value="Musk">
+                  <label class="btn btn-outline-primary" for="musk">Musk</label>
+                  
+                  <input type="checkbox" class="btn-check" id="spicy" value="Spicy">
+                  <label class="btn btn-outline-primary" for="spicy">Spicy</label>
+                  
+                  <input type="checkbox" class="btn-check" id="fresh" value="Fresh">
+                  <label class="btn btn-outline-primary" for="fresh">Fresh</label>
+                </div>
+                <input type="hidden" id="editNotes" value="">
               </div>
             </form>
           </div>
@@ -441,7 +482,13 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById('editDescription').value = perfume.description || '';
         document.getElementById('editSeason').value = perfume.season || '';
         document.getElementById('editOccasion').value = perfume.occasion || '';
-        document.getElementById('editNotes').value = (perfume.fragranceNotes || []).join(', ');
+        
+        // Set fragrance notes checkboxes
+        const notes = perfume.fragranceNotes || [];
+        document.querySelectorAll('.btn-check').forEach(checkbox => {
+          checkbox.checked = notes.includes(checkbox.value);
+        });
+        document.getElementById('editNotes').value = notes.join(', ');
       })
       .catch(err => {
         console.error('[ERROR] Failed to load perfume data:', err);
@@ -459,23 +506,41 @@ document.addEventListener('DOMContentLoaded', function () {
         return;
       }
       
+      // Collect checked fragrance notes
+      const selectedNotes = Array.from(document.querySelectorAll('.btn-check:checked'))
+        .map(cb => cb.value)
+        .join(', ');
+      
       const formData = new FormData();
       formData.append('id', id);
       formData.append('name', name);
       formData.append('brand', brand);
       formData.append('description', document.getElementById('editDescription').value.trim());
-      formData.append('season', document.getElementById('editSeason').value.trim());
-      formData.append('occasion', document.getElementById('editOccasion').value.trim());
-      formData.append('notes', document.getElementById('editNotes').value.trim());
+      formData.append('season', document.getElementById('editSeason').value);
+      formData.append('occasion', document.getElementById('editOccasion').value);
+      formData.append('notes', selectedNotes);
       
-      console.log('[DEBUG] Saving perfume edits for ID:', id);
+      console.log('[DEBUG] Saving perfume edits for ID:', id, 'Notes:', selectedNotes);
+      
+      // Get CSRF token from meta tag or cookie
+      const token = document.querySelector('meta[name="_csrf"]')?.getAttribute('content') || 
+                    getCookie('XSRF-TOKEN');
+      const header = document.querySelector('meta[name="_csrf_header"]')?.getAttribute('content') || 
+                     'X-CSRF-TOKEN';
+      
+      const headers = {};
+      if (token && header) {
+        headers[header] = token;
+      }
       
       fetch('/admin/catalog/edit', {
         method: 'POST',
-        body: formData
+        body: formData,
+        headers: headers
       })
       .then(r => {
-        if (r.ok) {
+        console.log('[DEBUG] Response status:', r.status);
+        if (r.status === 200 || r.status === 302) {
           console.log('[DEBUG] Edit successful, closing modal');
           showToast('Perfume updated successfully!', 'success');
           const modal = bootstrap.Modal.getInstance(editModal);
@@ -485,7 +550,8 @@ document.addEventListener('DOMContentLoaded', function () {
           const mode = activeMode ? activeMode.getAttribute('data-mode') : 'recommended';
           loadDiscover(mode);
         } else {
-          showToast('Failed to save changes', 'danger');
+          console.error('[ERROR] Response status:', r.status);
+          showToast('Failed to save changes (HTTP ' + r.status + ')', 'danger');
         }
       })
       .catch(err => {

@@ -1,6 +1,5 @@
 package com.maab.fragrance_tracker.config;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -15,9 +14,6 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
-
-    @Autowired(required = false)
-    private OAuth2SuccessHandler oauth2SuccessHandler;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -35,22 +31,8 @@ public class SecurityConfig {
               .loginPage("/login")
               .defaultSuccessUrl("/dashboard", true)
               .permitAll()
-          );
-        
-        // OAuth2 is optional - only configure if handler is available
-        if (oauth2SuccessHandler != null) {
-            try {
-                http.oauth2Login(oauth -> oauth
-                    .loginPage("/login")
-                    .defaultSuccessUrl("/dashboard", true)
-                    .successHandler(oauth2SuccessHandler)
-                );
-            } catch (Exception e) {
-                // OAuth2 not available, skip it
-            }
-        }
-        
-        http.logout(logout -> logout
+          )
+          .logout(logout -> logout
               .logoutSuccessUrl("/")
               .permitAll()
           );

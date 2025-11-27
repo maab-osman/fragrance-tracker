@@ -12,7 +12,7 @@ The application now supports three deployment profiles with different databases:
 
 ---
 
-## 🚀 Deployment Instructions
+##  Deployment Instructions
 
 ### **Option 1: Railway (PostgreSQL) - RECOMMENDED**
 
@@ -48,10 +48,10 @@ The application now supports three deployment profiles with different databases:
 - DevDataLoader seeds admin user and sample perfumes
 
 **Advantages:**
-- ✅ No manual database setup needed
-- ✅ PostgreSQL is more robust than H2
-- ✅ Free tier includes database
-- ✅ Easy to scale
+-  No manual database setup needed
+- PostgreSQL is more robust than H2
+- Free tier includes database
+- Easy to scale
 
 ---
 
@@ -171,7 +171,7 @@ CREATE TABLE review (
 
 ---
 
-## 🔑 Admin Account Created by DevDataLoader
+## Admin Account Created by DevDataLoader
 
 When the app starts, it automatically creates:
 
@@ -202,7 +202,7 @@ This user can access `/admin/catalog` to manage the fragrance catalog.
 
 ---
 
-## ✅ Verification Checklist
+## Verification Checklist
 
 After deployment:
 
@@ -228,7 +228,7 @@ After deployment:
 
 ---
 
-## 🐛 Troubleshooting
+## Troubleshooting
 
 ### **"Connection refused" Error**
 **Cause:** Database isn't running or wrong profile active
@@ -265,4 +265,4 @@ After deployment:
 | **Softala** | MySQL | Already exists | Set `SPRING_PROFILES_ACTIVE=softala` |
 | **Local** | H2 | None | Default `dev` profile |
 
-**Recommended:** Use Railway with PostgreSQL for the best experience! 🚀
+**Recommended:** Use Railway with PostgreSQL for the best experience! 

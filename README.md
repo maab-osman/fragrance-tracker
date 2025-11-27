@@ -1,9 +1,9 @@
 
 # Fragrance Tracker – Spring Boot Web Application
 
-A full-stack Spring Boot application for managing personal fragrance collections.  
-Users can register, log in, and track perfumes they own, want to buy, or have finished.  
-Built with modern Spring Boot, JPA, Thymeleaf, and secure authentication.
+A simple Spring Boot app to manage personal fragrance collections.
+
+Live site: https://fragrance-tracker-production.up.railway.app
 
 ---
 
@@ -20,10 +20,25 @@ Built with modern Spring Boot, JPA, Thymeleaf, and secure authentication.
 - Search fragrances by name
 - List fragrances with clean UI using Thymeleaf + Bootstrap
 
-### REST API (Basic)
-- Read-only REST endpoints for perfumes (JSON)
-- Located under `/api/perfumes`
-- Standard HTTP responses (200 / 201 / 404)
+### REST API (quick reference)
+- JSON endpoints under `/api/**`. Keep it simple—most actions need you to be logged in.
+
+Public
+- GET `/api/discover?mode=recommended|random|trending&limit=8` — list perfumes to explore
+
+Requires login
+- POST `/api/collection` — add a catalog perfume to your collection; body: `{ "perfumeId": <id> }`
+- GET `/api/perfumes` — your perfumes
+- GET `/api/perfumes/{id}` — one perfume by id
+- POST `/api/perfumes` — create a perfume you own
+- PUT `/api/perfumes/{id}` — update your perfume (admins can update catalog too)
+- GET `/api/perfumes/{id}/reviews` — list reviews (avg rating included)
+- POST `/api/perfumes/{id}/reviews` — add a review; body: `{ "rating": 1-5, "comment": "..." }`
+
+Admin only
+- PUT `/api/admin/catalog/{id}` — update a catalog perfume
+- DELETE `/api/perfumes/{id}` — delete a perfume
+- DELETE `/api/reviews/{id}` — delete a review
 
 ### Database Options
 Supports both:
@@ -62,27 +77,15 @@ src/main/resources/
 └── application.properties (local configs, not committed)
 ```
 
-## Local development (H2) — safe, no remote DB changes
+## Local development (H2) — optional
 
-Use the `dev` profile to run the application with an in-memory H2 database that won't touch your MySQL or other remote databases.
+Use the `dev` profile to run with an in-memory H2 database.
 
-Run locally with Maven (uses the H2 profile):
-
+Example:
 ```bash
 ./mvnw -DskipTests spring-boot:run -Dspring-boot.run.profiles=dev
 ```
-
-Notes:
-- The H2 console will be available at http://localhost:8080/h2-console when the app is running with the `dev` profile.
-- The `application-dev.properties` file is intended for local development and should remain uncommitted (it's already ignored by `.gitignore`).
-- To explicitly set the profile via environment variable:
-
-```bash
-export SPRING_PROFILES_ACTIVE=dev
-./mvnw -DskipTests spring-boot:run
-```
-
-If you want me to run the app locally now with the `dev` profile and confirm the H2 console appears, say "please run dev" and I'll start it for you.
+H2 console: http://localhost:8080/h2-console
 
 ## License
 

@@ -74,6 +74,13 @@
     		<artifactId>mysql-connector-j</artifactId>
     		<scope>runtime</scope>
 		</dependency>
+
+		<!-- PostgreSQL Connector (active in Railway deployment) -->
+		<dependency>
+			<groupId>org.postgresql</groupId>
+			<artifactId>postgresql</artifactId>
+			<scope>runtime</scope>
+		</dependency>
 		
 		<!-- H2 for Development -->
 		<dependency>

@@ -16,6 +16,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import com.maab.fragrance_tracker.model.Perfume;
 import com.maab.fragrance_tracker.service.PerfumeService;
 
+import jakarta.servlet.http.HttpServletRequest;
+
 @Controller
 @RequestMapping("/admin")
 @PreAuthorize("hasRole('ADMIN')")
@@ -25,6 +27,23 @@ public class AdminController {
 
     public AdminController(PerfumeService perfumeService) {
         this.perfumeService = perfumeService;
+    }
+
+    // Helper to build redirect URLs that respect X-Forwarded-Proto
+    private String buildRedirectUrl(HttpServletRequest request, String path) {
+        String proto = request.getHeader("X-Forwarded-Proto");
+        if (proto == null || proto.isEmpty()) {
+            proto = request.getScheme();
+        }
+        String host = request.getHeader("X-Forwarded-Host");
+        if (host == null || host.isEmpty()) {
+            host = request.getServerName();
+            int port = request.getServerPort();
+            if (!((proto.equals("http") && port == 80) || (proto.equals("https") && port == 443))) {
+                host = host + ":" + port;
+            }
+        }
+        return "redirect:" + proto + "://" + host + path;
     }
 
     // GET /admin/catalog?page=0&size=20
@@ -92,7 +111,8 @@ public class AdminController {
     }
 
     @PostMapping("/catalog/edit")
-    public String editCatalogPerfume(@RequestParam Long id,
+    public String editCatalogPerfume(HttpServletRequest request,
+                                     @RequestParam Long id,
                                      @RequestParam String name,
                                      @RequestParam String brand,
                                      @RequestParam(required = false) String description,
@@ -106,14 +126,14 @@ public class AdminController {
             Perfume existing = perfumeService.findById(id).orElse(null);
             if (existing == null) {
                 System.err.println("[ERROR] editCatalogPerfume() - Perfume not found: " + id);
-                return "redirect:/admin/catalog?error=notfound";
+                return buildRedirectUrl(request, "/admin/catalog?error=notfound");
             }
 
             String n = trimOrNull(name);
             String b = trimOrNull(brand);
             if (n == null || b == null) {
                 System.err.println("[ERROR] editCatalogPerfume() - Missing name or brand");
-                return "redirect:/admin/catalog?error=missing";
+                return buildRedirectUrl(request, "/admin/catalog?error=missing");
             }
 
             existing.setName(n);
@@ -132,17 +152,16 @@ public class AdminController {
             System.out.println("[DEBUG] editCatalogPerfume() - About to save perfume id=" + id);
             perfumeService.save(existing);
             System.out.println("[DEBUG] editCatalogPerfume() - Successfully saved perfume id=" + id);
-            return "redirect:/admin/catalog?ok=updated";
+            return buildRedirectUrl(request, "/admin/catalog?ok=updated");
         } catch (Exception e) {
             System.err.println("[ERROR] editCatalogPerfume() - Exception: " + e.getMessage());
             System.err.println("[ERROR] editCatalogPerfume() - Stack trace:");
             for (StackTraceElement elem : e.getStackTrace()) {
                 System.err.println("  at " + elem);
             }
-            return "redirect:/admin/catalog?error=exception";
+            return buildRedirectUrl(request, "/admin/catalog?error=exception");
         }
     }
-
     @PostMapping("/catalog/delete")
     public String deleteCatalogPerfume(@RequestParam Long id) {
         // If you have FK reviews → ensure cascade or delete reviews first

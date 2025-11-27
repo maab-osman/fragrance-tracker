@@ -511,37 +511,29 @@ document.addEventListener('DOMContentLoaded', function () {
         .map(cb => cb.value)
         .join(', ');
       
-      const formData = new FormData();
-      formData.append('id', id);
-      formData.append('name', name);
-      formData.append('brand', brand);
-      formData.append('description', document.getElementById('editDescription').value.trim());
-      formData.append('season', document.getElementById('editSeason').value);
-      formData.append('occasion', document.getElementById('editOccasion').value);
-      formData.append('notes', selectedNotes);
+      // Build URL encoded form data (Spring expects this format)
+      const params = new URLSearchParams();
+      params.append('id', id);
+      params.append('name', name);
+      params.append('brand', brand);
+      params.append('description', document.getElementById('editDescription').value.trim());
+      params.append('season', document.getElementById('editSeason').value);
+      params.append('occasion', document.getElementById('editOccasion').value);
+      params.append('notes', selectedNotes);
       
       console.log('[DEBUG] Saving perfume edits for ID:', id, 'Notes:', selectedNotes);
       
-      // Get CSRF token from meta tag or cookie
-      const token = document.querySelector('meta[name="_csrf"]')?.getAttribute('content') || 
-                    getCookie('XSRF-TOKEN');
-      const header = document.querySelector('meta[name="_csrf_header"]')?.getAttribute('content') || 
-                     'X-CSRF-TOKEN';
-      
-      const headers = {};
-      if (token && header) {
-        headers[header] = token;
-      }
-      
       fetch('/admin/catalog/edit', {
         method: 'POST',
-        body: formData,
-        headers: headers
+        body: params.toString(),
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded'
+        }
       })
       .then(r => {
         console.log('[DEBUG] Response status:', r.status);
-        if (r.status === 200 || r.status === 302) {
-          console.log('[DEBUG] Edit successful, closing modal');
+        if (r.status === 200 || r.status === 302 || r.ok) {
+          console.log('[DEBUG] Edit successful');
           showToast('Perfume updated successfully!', 'success');
           const modal = bootstrap.Modal.getInstance(editModal);
           if (modal) modal.hide();
@@ -551,12 +543,13 @@ document.addEventListener('DOMContentLoaded', function () {
           loadDiscover(mode);
         } else {
           console.error('[ERROR] Response status:', r.status);
+          r.text().then(text => console.error('[ERROR] Response body:', text));
           showToast('Failed to save changes (HTTP ' + r.status + ')', 'danger');
         }
       })
       .catch(err => {
         console.error('[ERROR] Save failed:', err);
-        showToast('Error saving changes', 'danger');
+        showToast('Error saving changes: ' + err.message, 'danger');
       });
     });
     

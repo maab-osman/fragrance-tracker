@@ -100,29 +100,39 @@ public class AdminController {
                                      @RequestParam(required = false) String occasion,
                                      @RequestParam(required = false) String notes) {
 
-        Perfume existing = perfumeService.findById(id).orElse(null);
-        if (existing == null) {
-            return "redirect:/admin/catalog?error=notfound";
+        try {
+            System.out.println("[DEBUG] editCatalogPerfume() - id=" + id + ", name=" + name + ", brand=" + brand);
+            
+            Perfume existing = perfumeService.findById(id).orElse(null);
+            if (existing == null) {
+                System.err.println("[ERROR] editCatalogPerfume() - Perfume not found: " + id);
+                return "redirect:/admin/catalog?error=notfound";
+            }
+
+            String n = trimOrNull(name);
+            String b = trimOrNull(brand);
+            if (n == null || b == null) {
+                System.err.println("[ERROR] editCatalogPerfume() - Missing name or brand");
+                return "redirect:/admin/catalog?error=missing";
+            }
+
+            existing.setName(n);
+            existing.setBrand(b);
+            existing.setDescription(trimOrNull(description));
+            existing.setSeason(trimOrNull(season));
+            existing.setOccasion(trimOrNull(occasion));
+            existing.setCollectionStatus("CATALOG");
+
+            List<String> parsedNotes = parseNotes(notes);
+            existing.setFragranceNotes(parsedNotes);
+
+            perfumeService.save(existing);
+            System.out.println("[DEBUG] editCatalogPerfume() - Successfully saved perfume id=" + id);
+            return "redirect:/admin/catalog?ok=updated";
+        } catch (Exception e) {
+            System.err.println("[ERROR] editCatalogPerfume() - Exception: " + e.getMessage());
+            return "redirect:/admin/catalog?error=exception";
         }
-
-        String n = trimOrNull(name);
-        String b = trimOrNull(brand);
-        if (n == null || b == null) {
-            return "redirect:/admin/catalog?error=missing";
-        }
-
-        existing.setName(n);
-        existing.setBrand(b);
-        existing.setDescription(trimOrNull(description));
-        existing.setSeason(trimOrNull(season));
-        existing.setOccasion(trimOrNull(occasion));
-        existing.setCollectionStatus("CATALOG"); // keep it catalog
-
-        List<String> parsedNotes = parseNotes(notes);
-        existing.setFragranceNotes(parsedNotes);  // clear if empty
-
-        perfumeService.save(existing);
-        return "redirect:/admin/catalog?ok=updated";
     }
 
     @PostMapping("/catalog/delete")

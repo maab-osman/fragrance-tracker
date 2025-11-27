@@ -21,10 +21,11 @@ public class SecurityConfig {
           .cors(cors -> cors.configurationSource(corsConfigurationSource()))
           .authorizeHttpRequests(auth -> auth
               .requestMatchers("/", "/register", "/css/**", "/js/**", "/img/**", "/fonts/**", "/h2-console/**").permitAll()
+              .requestMatchers("/api/discover").permitAll()
+              .requestMatchers("/discover/**").permitAll()
               .requestMatchers("/admin/**").hasRole("ADMIN")
               .requestMatchers("/api/admin/**").hasRole("ADMIN")
-              .requestMatchers("/api/discover", "/api/perfumes/*/reviews").authenticated()
-              .requestMatchers("/discover/**").authenticated()
+              .requestMatchers("/api/perfumes/*/reviews").authenticated()
               .requestMatchers("/api/**").authenticated()
               .anyRequest().authenticated()
           )

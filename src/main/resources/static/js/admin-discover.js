@@ -63,7 +63,7 @@ document.addEventListener('DOMContentLoaded', function () {
       col.className = 'col-md-6';
       col.innerHTML = `
         <div class="card h-100">
-          <div class="position-absolute top-0 end-0 p-2 d-flex gap-2">
+          <div class="position-absolute top-0 end-0 p-2 d-flex gap-1">
             <button class="btn btn-sm btn-info admin-edit-btn" data-id="${p.id}" title="Edit this perfume">
               <i class="bi bi-pencil"></i> Edit
             </button>
@@ -376,6 +376,28 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   });
 
+  // Update perfume card after edit
+  function updatePerfumeCard(perfume) {
+    // Find the card with this perfume ID
+    const btn = document.querySelector(`[data-id="${perfume.id}"]`);
+    if (!btn) return; // Card not visible in current view
+    
+    // Get the card container
+    const card = btn.closest('.card');
+    if (!card) return;
+    
+    // Update the card content
+    const titleEl = card.querySelector('.card-title');
+    const subtitleEl = card.querySelector('.card-subtitle');
+    const descEl = card.querySelector('.card-text');
+    
+    if (titleEl) titleEl.textContent = perfume.name;
+    if (subtitleEl) subtitleEl.textContent = perfume.brand || '';
+    if (descEl) descEl.textContent = perfume.shortDescription || perfume.description || '';
+    
+    console.log('[DEBUG] Updated card for perfume:', perfume.id, perfume.name);
+  }
+
   // Admin Edit Modal Function
   function showEditModal(perfumeId) {
     // Create a modal for editing
@@ -533,13 +555,16 @@ document.addEventListener('DOMContentLoaded', function () {
         console.log('[DEBUG] Response status:', r.status);
         if (r.ok) {
           console.log('[DEBUG] Edit successful');
-          showToast('Perfume updated successfully!', 'success');
-          const modal = bootstrap.Modal.getInstance(editModal);
-          if (modal) modal.hide();
-          // Reload the discover list
-          const activeMode = document.querySelector('[data-mode].active');
-          const mode = activeMode ? activeMode.getAttribute('data-mode') : 'recommended';
-          loadDiscover(mode);
+          return r.json().then(updatedPerfume => {
+            showToast('Perfume updated successfully!', 'success');
+            
+            // Close modal
+            const modal = bootstrap.Modal.getInstance(editModal);
+            if (modal) modal.hide();
+            
+            // Update the card immediately instead of reloading full list
+            updatePerfumeCard(updatedPerfume);
+          });
         } else {
           console.error('[ERROR] Response status:', r.status);
           r.text().then(text => console.error('[ERROR] Response body:', text));

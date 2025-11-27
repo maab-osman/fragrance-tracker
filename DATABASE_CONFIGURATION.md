@@ -1,6 +1,6 @@
 # Database Configuration Guide for Fragrance Tracker
 
-## 📋 Overview
+## Overview
 
 The application now supports three deployment profiles with different databases:
 

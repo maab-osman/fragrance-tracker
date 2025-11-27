@@ -91,7 +91,7 @@ public class PerfumeService {
         // Filter to only admin-added perfumes (user = null)
         List<Perfume> catalogOnly = all.stream()
             .filter(p -> p.getUser() == null)
-            .toList();
+            .collect(java.util.stream.Collectors.toList());
         java.util.Collections.shuffle(catalogOnly);
         return catalogOnly.stream().limit(limit).toList();
     }
@@ -121,15 +121,19 @@ public class PerfumeService {
      * which is an advanced Spring feature not typically covered in introductory courses.
      * It improves application performance by caching recommendations per user.
      * 
-     * @param user the user for whom recommendations are generated
+     * @param user the user for whom recommendations are generated (null returns trending)
      * @param limit maximum number of recommendations to return
      * @return a list of recommended perfumes sorted by relevance score (descending)
      */
-    @Cacheable(value = "recommendations", key = "#user.id + '_' + #limit")
     public List<Perfume> recommendForUser(User user, int limit) {
         if (user == null) {
             return findLatest(limit);
         }
+        return recommendForUserCached(user, limit);
+    }
+
+    @Cacheable(value = "recommendations", key = "#user.id + '_' + #limit")
+    public List<Perfume> recommendForUserCached(User user, int limit) {
 
         List<Perfume> userPerfumes = perfumeRepository.findByUser(user);
         if (userPerfumes.isEmpty()) {

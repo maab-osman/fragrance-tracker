@@ -230,6 +230,83 @@
     });
 </script>
 
+<script>
+    // Instant delete: intercept delete form submit, call admin API, and remove the card immediately
+    (function(){
+        const deleteForms = document.querySelectorAll('form[action="/admin/catalog/delete"]');
+        deleteForms.forEach(form => {
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+
+                const idInput = form.querySelector('input[name="id"]');
+                const submitBtn = form.querySelector('button[type="submit"]');
+                const perfumeCard = form.closest('.perfume-card');
+                const perfumeId = idInput ? idInput.value : null;
+                if (!perfumeId) return;
+
+                if (!confirm('Delete this perfume?')) return;
+
+                // In-flight UI feedback
+                const originalHtml = submitBtn ? submitBtn.innerHTML : null;
+                if (submitBtn) {
+                    submitBtn.disabled = true;
+                    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Deleting…';
+                }
+
+                fetch(`/api/perfumes/${perfumeId}`, {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include'
+                }).then(r => {
+                    if (r.ok) {
+                        // Remove card instantly
+                        if (perfumeCard) perfumeCard.remove();
+                        // Optional: show a transient alert at the top of the page
+                        const alert = document.createElement('div');
+                        alert.className = 'alert alert-success position-fixed';
+                        alert.style.top = '20px';
+                        alert.style.right = '20px';
+                        alert.style.zIndex = '9999';
+                        alert.textContent = 'Perfume deleted from catalog';
+                        document.body.appendChild(alert);
+                        setTimeout(()=> alert.remove(), 3000);
+                    } else {
+                        // Restore button and show error
+                        if (submitBtn) {
+                            submitBtn.disabled = false;
+                            if (originalHtml) submitBtn.innerHTML = originalHtml;
+                        }
+                        const msg = r.status === 403 ? 'Not authorized to delete' : 'Failed to delete perfume';
+                        const alert = document.createElement('div');
+                        alert.className = 'alert alert-danger position-fixed';
+                        alert.style.top = '20px';
+                        alert.style.right = '20px';
+                        alert.style.zIndex = '9999';
+                        alert.textContent = msg;
+                        document.body.appendChild(alert);
+                        setTimeout(()=> alert.remove(), 3000);
+                    }
+                }).catch(err => {
+                    if (submitBtn) {
+                        submitBtn.disabled = false;
+                        if (originalHtml) submitBtn.innerHTML = originalHtml;
+                    }
+                    const alert = document.createElement('div');
+                    alert.className = 'alert alert-danger position-fixed';
+                    alert.style.top = '20px';
+                    alert.style.right = '20px';
+                    alert.style.zIndex = '9999';
+                    alert.textContent = 'Error deleting perfume';
+                    document.body.appendChild(alert);
+                    setTimeout(()=> alert.remove(), 3000);
+                    console.error('Delete failed', err);
+                });
+            });
+        });
+    })();
+</script>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

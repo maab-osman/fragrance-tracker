@@ -124,13 +124,21 @@ public class AdminController {
             existing.setCollectionStatus("CATALOG");
 
             List<String> parsedNotes = parseNotes(notes);
-            existing.setFragranceNotes(parsedNotes);
+            System.out.println("[DEBUG] editCatalogPerfume() - Parsed notes: " + parsedNotes);
+            // Clear and update the collection instead of replacing it (works better with @ElementCollection)
+            existing.getFragranceNotes().clear();
+            existing.getFragranceNotes().addAll(parsedNotes);
 
+            System.out.println("[DEBUG] editCatalogPerfume() - About to save perfume id=" + id);
             perfumeService.save(existing);
             System.out.println("[DEBUG] editCatalogPerfume() - Successfully saved perfume id=" + id);
             return "redirect:/admin/catalog?ok=updated";
         } catch (Exception e) {
             System.err.println("[ERROR] editCatalogPerfume() - Exception: " + e.getMessage());
+            System.err.println("[ERROR] editCatalogPerfume() - Stack trace:");
+            for (StackTraceElement elem : e.getStackTrace()) {
+                System.err.println("  at " + elem);
+            }
             return "redirect:/admin/catalog?error=exception";
         }
     }

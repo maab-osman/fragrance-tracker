@@ -70,11 +70,13 @@ public class DiscoverController {
             
             final List<Long> userOwnedIds = currentUser != null ? perfumeService.findByUser(currentUser).stream().map(Perfume::getId).collect(Collectors.toList()) : java.util.Collections.emptyList();
 
-            List<PerfumeDto> dtos = list.stream().map(p -> new PerfumeDto(p.getId(), p.getName(), p.getBrand(),
-                    p.getDescription()==null?"":(p.getDescription().length()>120?p.getDescription().substring(0,120)+"...":p.getDescription()),
-                    List.of(p.getSeason(), p.getOccasion()).stream().filter(s->s!=null).collect(Collectors.toList()),
-                    currentUser!=null && userOwnedIds.contains(p.getId())
-            )).collect(Collectors.toList());
+        List<PerfumeDto> dtos = list.stream().map(p -> new PerfumeDto(p.getId(), p.getName(), p.getBrand(),
+            p.getDescription()==null?"":(p.getDescription().length()>120?p.getDescription().substring(0,120)+"...":p.getDescription()),
+            java.util.stream.Stream.of(p.getSeason(), p.getOccasion())
+            .filter(java.util.Objects::nonNull)
+            .collect(Collectors.toList()),
+            currentUser!=null && userOwnedIds.contains(p.getId())
+        )).collect(Collectors.toList());
 
             System.out.println("[DEBUG] discover() - returning " + dtos.size() + " DTOs");
             return ResponseEntity.ok(dtos);

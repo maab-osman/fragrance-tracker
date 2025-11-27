@@ -22,6 +22,7 @@ public class SecurityConfig {
           .authorizeHttpRequests(auth -> auth
               .requestMatchers("/", "/register", "/css/**", "/js/**", "/img/**", "/fonts/**", "/h2-console/**").permitAll()
               .requestMatchers("/api/discover").permitAll()
+              .requestMatchers("/api/collection").permitAll() // allow controller to return 401 for unauthenticated API callers
               .requestMatchers("/discover/**").permitAll()
               .requestMatchers("/admin/**").hasRole("ADMIN")
               .requestMatchers("/api/admin/**").hasRole("ADMIN")

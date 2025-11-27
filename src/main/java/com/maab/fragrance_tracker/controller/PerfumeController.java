@@ -107,6 +107,23 @@ public String addPerfume(@ModelAttribute Perfume perfume) {
             return "error/404";
         }
         Perfume perfume = opt.get();
+
+        // Guard: disallow editing catalog items for non-admins and ensure ownership
+        UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext()
+            .getAuthentication().getPrincipal();
+        User currentUser = userRepository.findByUsername(userDetails.getUsername())
+            .orElse(null);
+        boolean isAdmin = currentUser != null && currentUser.isAdmin();
+
+        if ("CATALOG".equalsIgnoreCase(perfume.getCollectionStatus()) && !isAdmin) {
+            return "redirect:/perfumes?error=forbidden";
+        }
+        if (!isAdmin) {
+            if (perfume.getUser() == null || !perfume.getUser().getId().equals(currentUser.getId())) {
+                return "redirect:/perfumes?error=forbidden";
+            }
+        }
+
         model.addAttribute("perfume", perfume);
         model.addAttribute("seasons", seasons);
         model.addAttribute("occasions", occasions);
@@ -118,16 +135,41 @@ public String addPerfume(@ModelAttribute Perfume perfume) {
     public String updatePerfume(@AuthenticationPrincipal UserDetails userDetails,
                                 @PathVariable Long id,
                                 @ModelAttribute Perfume updated) {
-        // keep the existing user association
         var existingOpt = perfumeService.findById(id);
         if (existingOpt.isEmpty()) {
             return "error/404";
         }
         Perfume existing = existingOpt.get();
 
-        updated.setId(id);
-        updated.setUser(existing.getUser());
-        perfumeService.save(updated);
+        // Identify current user and role
+        User currentUser = userRepository.findByUsername(userDetails.getUsername())
+            .orElse(null);
+        boolean isAdmin = currentUser != null && currentUser.isAdmin();
+
+        // Block edits to catalog entries unless admin
+        if ("CATALOG".equalsIgnoreCase(existing.getCollectionStatus()) && !isAdmin) {
+            return "redirect:/perfumes?error=forbidden";
+        }
+
+        // For non-admins, ensure ownership
+        if (!isAdmin) {
+            if (existing.getUser() == null || !existing.getUser().getId().equals(currentUser.getId())) {
+                return "redirect:/perfumes?error=forbidden";
+            }
+        }
+
+        // Whitelist updates; mutate collection instead of replacing
+        existing.setName(updated.getName());
+        existing.setBrand(updated.getBrand());
+        existing.setDescription(updated.getDescription());
+        existing.setSeason(updated.getSeason());
+        existing.setOccasion(updated.getOccasion());
+        if (updated.getFragranceNotes() != null) {
+            existing.getFragranceNotes().clear();
+            existing.getFragranceNotes().addAll(updated.getFragranceNotes());
+        }
+
+        perfumeService.save(existing);
         return "redirect:/perfumes";
     }
 

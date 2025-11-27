@@ -1,5 +1,8 @@
 package com.maab.fragrance_tracker.controller;
 
+import java.util.List;
+import java.util.Map;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -8,12 +11,16 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
+import com.maab.fragrance_tracker.model.Perfume;
 import com.maab.fragrance_tracker.model.User;
 import com.maab.fragrance_tracker.repository.UserRepository;
 import com.maab.fragrance_tracker.service.PerfumeService;
 import com.maab.fragrance_tracker.service.ReviewService;
+
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
 
 /**
  * Admin discovery and management controller.
@@ -114,6 +121,71 @@ public class AdminDiscoverController {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(java.util.Map.of("error", "Failed to delete review: " + e.getMessage()));
+        }
+    }
+        /**
+     * Updates a catalog perfume (admin only).
+     */
+    @PutMapping("/api/admin/catalog/{id}")
+    @ResponseBody
+    public ResponseEntity<?> updateCatalogPerfume(
+            @PathVariable("id") Long perfumeId,
+            @RequestBody Map<String, Object> payload) {
+
+        User currentUser = getCurrentUser();
+
+        // Check admin privilege
+        if (currentUser == null || !currentUser.isAdmin()) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(Map.of("error", "Admin access required"));
+        }
+
+        try {
+            // Load perfume (adapt method name if your service is different)
+            Perfume perfume = perfumeService.findById(perfumeId).orElse(null);
+            
+            if (perfume == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("error", "Perfume not found"));
+            }
+
+            // Only update allowed fields
+            if (payload.containsKey("name")) {
+                perfume.setName((String) payload.get("name"));
+            }
+            if (payload.containsKey("brand")) {
+                perfume.setBrand((String) payload.get("brand"));
+            }
+            if (payload.containsKey("description")) {
+                perfume.setDescription((String) payload.get("description"));
+            }
+            if (payload.containsKey("season")) {
+                perfume.setSeason((String) payload.get("season"));
+            }
+            if (payload.containsKey("occasion")) {
+                perfume.setOccasion((String) payload.get("occasion"));
+            }
+
+            // fragranceNotes expected as JSON array of strings
+            if (payload.containsKey("fragranceNotes") && payload.get("fragranceNotes") != null) {
+                @SuppressWarnings("unchecked")
+                List<String> notes = (List<String>) payload.get("fragranceNotes");
+                // Clear and update the collection instead of replacing it (works better with @ElementCollection)
+                perfume.getFragranceNotes().clear();
+                perfume.getFragranceNotes().addAll(notes);
+            }
+
+            // Ensure this remains catalog item
+            perfume.setCollectionStatus("CATALOG");
+
+            Perfume saved = perfumeService.save(perfume);
+
+            return ResponseEntity.ok(saved);
+
+        } catch (Exception e) {
+            System.err.println("[ERROR] updateCatalogPerfume() - Exception: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("error", "Failed to update perfume: " + e.getMessage()));
         }
     }
 

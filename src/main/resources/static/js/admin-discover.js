@@ -507,32 +507,31 @@ document.addEventListener('DOMContentLoaded', function () {
       }
       
       // Collect checked fragrance notes
-      const selectedNotes = Array.from(document.querySelectorAll('.btn-check:checked'))
+      const fragranceNotes = Array.from(document.querySelectorAll('.btn-check:checked'))
         .map(cb => cb.value)
-        .join(', ');
+        .filter(n => n.length > 0);
       
-      // Build URL encoded form data (Spring expects this format)
-      const params = new URLSearchParams();
-      params.append('id', id);
-      params.append('name', name);
-      params.append('brand', brand);
-      params.append('description', document.getElementById('editDescription').value.trim());
-      params.append('season', document.getElementById('editSeason').value);
-      params.append('occasion', document.getElementById('editOccasion').value);
-      params.append('notes', selectedNotes);
+      const payload = {
+        name,
+        brand,
+        description: document.getElementById('editDescription').value.trim(),
+        season: document.getElementById('editSeason').value || null,
+        occasion: document.getElementById('editOccasion').value || null,
+        fragranceNotes
+      };
       
-      console.log('[DEBUG] Saving perfume edits for ID:', id, 'Notes:', selectedNotes);
+      console.log('[DEBUG] Saving perfume edits for ID:', id, 'Payload:', payload);
       
-      fetch('/admin/catalog/edit', {
-        method: 'POST',
-        body: params.toString(),
+      fetch(`/api/admin/catalog/${id}`, {
+        method: 'PUT',
         headers: {
-          'Content-Type': 'application/x-www-form-urlencoded'
-        }
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
       })
       .then(r => {
         console.log('[DEBUG] Response status:', r.status);
-        if (r.status === 200 || r.status === 302 || r.ok) {
+        if (r.ok) {
           console.log('[DEBUG] Edit successful');
           showToast('Perfume updated successfully!', 'success');
           const modal = bootstrap.Modal.getInstance(editModal);

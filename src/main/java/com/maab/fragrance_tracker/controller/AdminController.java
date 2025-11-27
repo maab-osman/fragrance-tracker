@@ -31,10 +31,16 @@ public class AdminController {
 
     // Helper to build redirect URLs that respect X-Forwarded-Proto
     private String buildRedirectUrl(HttpServletRequest request, String path) {
+        if (request == null) {
+            // Fallback if request is null
+            return "redirect:" + path;
+        }
+        
         String proto = request.getHeader("X-Forwarded-Proto");
         if (proto == null || proto.isEmpty()) {
             proto = request.getScheme();
         }
+        
         String host = request.getHeader("X-Forwarded-Host");
         if (host == null || host.isEmpty()) {
             host = request.getServerName();

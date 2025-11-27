@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.maab.fragrance_tracker.model.Perfume;
@@ -19,8 +20,6 @@ import com.maab.fragrance_tracker.model.User;
 import com.maab.fragrance_tracker.repository.UserRepository;
 import com.maab.fragrance_tracker.service.PerfumeService;
 import com.maab.fragrance_tracker.service.ReviewService;
-
-import io.swagger.v3.oas.annotations.parameters.RequestBody;
 
 /**
  * Admin discovery and management controller.

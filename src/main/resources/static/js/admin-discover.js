@@ -162,22 +162,43 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   function deletePerfume(perfumeId) {
+    // Find the specific delete button and its card container to update UI instantly
+    const deleteBtn = document.querySelector(`.admin-delete-btn[data-id="${perfumeId}"]`);
+    const columnEl = deleteBtn ? deleteBtn.closest('.col-md-6') : null;
+
+    // Provide immediate feedback while request is in-flight
+    let originalHtml;
+    if (deleteBtn) {
+      originalHtml = deleteBtn.innerHTML;
+      deleteBtn.disabled = true;
+      deleteBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Deleting…';
+    }
+
     fetch(`/api/perfumes/${perfumeId}`, {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include'
     }).then(r => {
       if (r.ok) {
+        // Remove the card instantly without reloading the whole grid
+        if (columnEl && columnEl.parentElement) {
+          columnEl.remove();
+        }
         showToast('Perfume deleted from catalog', 'success');
-        // Reload the current view
-        const activeMode = document.querySelector('[data-mode].active');
-        const mode = activeMode ? activeMode.getAttribute('data-mode') : 'recommended';
-        loadDiscover(mode);
       } else {
+        // Restore button state on failure
+        if (deleteBtn) {
+          deleteBtn.disabled = false;
+          if (originalHtml) deleteBtn.innerHTML = originalHtml;
+        }
         showToast('Failed to delete perfume', 'danger');
       }
     }).catch(err => {
       console.error(err);
+      if (deleteBtn) {
+        deleteBtn.disabled = false;
+        if (originalHtml) deleteBtn.innerHTML = originalHtml;
+      }
       showToast('Error deleting perfume', 'danger');
     });
   }

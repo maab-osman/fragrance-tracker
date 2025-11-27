@@ -36,7 +36,9 @@ document.addEventListener('DOMContentLoaded', function () {
   function loadDiscover(mode) {
     const content = document.getElementById('discoverContent');
     content.innerHTML = '<div class="text-center py-5">Loading…</div>';
-    fetch(`/api/discover?mode=${mode}&limit=8`)
+    fetch(`/api/discover?mode=${mode}&limit=8`, {
+      credentials: 'include'
+    })
       .then(r => {
         if (!r.ok) {
           throw new Error(`HTTP ${r.status}: ${r.statusText}`);
@@ -125,6 +127,7 @@ document.addEventListener('DOMContentLoaded', function () {
         fetch('/api/collection', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
           body: JSON.stringify({ perfumeId: Number(id) })
         }).then(r => {
           if (r.ok) {
@@ -161,7 +164,8 @@ document.addEventListener('DOMContentLoaded', function () {
   function deletePerfume(perfumeId) {
     fetch(`/api/perfumes/${perfumeId}`, {
       method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' }
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include'
     }).then(r => {
       if (r.ok) {
         showToast('Perfume deleted from catalog', 'success');
@@ -202,7 +206,9 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   function loadReviews(perfumeId) {
-    fetch(`/api/perfumes/${perfumeId}/reviews`)
+    fetch(`/api/perfumes/${perfumeId}/reviews`, {
+      credentials: 'include'
+    })
       .then(r => r.json())
       .then(data => {
         const reviews = data.reviews || [];
@@ -271,7 +277,8 @@ document.addEventListener('DOMContentLoaded', function () {
   function deleteReview(reviewId) {
     fetch(`/api/reviews/${reviewId}`, {
       method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' }
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include'
     }).then(r => {
       if (r.ok) {
         showToast('Review deleted', 'success');
@@ -357,6 +364,7 @@ document.addEventListener('DOMContentLoaded', function () {
     fetch(`/api/perfumes/${currentPerfumeId}/reviews`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify({ rating, comment })
     }).then(r => {
       if (r.ok) {
@@ -495,7 +503,9 @@ document.addEventListener('DOMContentLoaded', function () {
     document.body.appendChild(editModal);
     
     // Load perfume data from details modal or fetch it
-    fetch(`/api/perfumes/${perfumeId}`)
+    fetch(`/api/perfumes/${perfumeId}`, {
+      credentials: 'include'
+    })
       .then(r => r.json())
       .then(perfume => {
         console.log('[DEBUG] Fetched perfume for editing:', perfume);
@@ -549,6 +559,7 @@ document.addEventListener('DOMContentLoaded', function () {
         headers: {
           'Content-Type': 'application/json'
         },
+        credentials: 'include',
         body: JSON.stringify(payload)
       })
       .then(r => {

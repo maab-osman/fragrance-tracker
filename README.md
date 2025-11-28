@@ -10,7 +10,7 @@ Fragrance Tracker is a learning + utility project that solves a real personal ne
 * Guided discovery – recommended, random, and trending modes help you explore beyond your own list.
 * Community-style feedback – lightweight review & rating system (1–5 stars + comments) with aggregation for quick comparison.
 * Role separation – normal users curate their private collection; admins maintain a shared catalog and moderate reviews.
-* Experimentation space – integrates advanced Spring Boot features (security customization, OAuth2 client readiness, OpenAPI, layered architecture, test suite) beyond the basic lecture material.
+* Experimentation space – integrates advanced Spring Boot features
 
 The design focuses on clean separation (controller/service/repository), secure update rules (ownership + role checks), and efficient JPA mappings (in-place mutation of note lists) so it can be extended later.
 

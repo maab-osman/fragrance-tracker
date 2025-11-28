@@ -54,7 +54,7 @@ Live site: https://fragrance-tracker-production.up.railway.app
 - Separation of concerns: controller/service/repository layers
 
 ### REST API (Quick Reference)
-- JSON endpoints under `/api/**`. Keep it simple—most actions need you to be logged in.
+- JSON endpoints under `/api/**`. Most actions need you to be logged in.
 
 Public
 - GET `/api/discover?mode=recommended|random|trending&limit=8` — list perfumes to explore
@@ -122,13 +122,6 @@ spring.jpa.hibernate.ddl-auto=update
 spring.datasource.hikari.maximum-pool-size=5
 ```
 
-Softala profile example (if used):
-```
-spring.datasource.url=jdbc:postgresql://SOFTALA_HOST:5432/SOFTALA_DB
-spring.datasource.username=SOFTALA_USER
-spring.datasource.password=SOFTALA_PASSWORD
-spring.jpa.hibernate.ddl-auto=update
-```
 
 Uses JPA + Hibernate with automatic schema generation (`ddl-auto=update`), and efficient `@ElementCollection` for notes.
 
@@ -139,7 +132,7 @@ Uses JPA + Hibernate with automatic schema generation (`ddl-auto=update`), and e
 - **Backend**: Spring Boot 3 (Java 17+)
 - **Web**: Spring MVC + Thymeleaf + Bootstrap
 - **Database**: H2 / MySQL / MariaDB
-- **Security**: Spring Security (form login) + optional OAuth2 social login
+- **Security**: Spring Security (form login)
 - **Build Tool**: Maven
 
 ---
@@ -172,11 +165,9 @@ Example:
 ```
 H2 console: http://localhost:8080/h2-console
 
-## Advanced Spring Boot Features (Beyond Lectures)
+## Advanced Spring Boot Features
 These illustrate independent learning & wider scope:
 - Custom Security configuration (role hierarchy, granular antMatcher rules, CSRF relaxation for APIs)
-- OAuth2 Client (social login ready)
-- OpenAPI (springdoc) integration for live API docs
 - Thymeleaf + Spring Security dialect usage
 - JPA `@ElementCollection` for dynamic notes list
 - Review aggregation logic & average rating computation

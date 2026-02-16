@@ -14,7 +14,7 @@ Fragrance Tracker is a learning + utility project that solves a real personal ne
 
 The design focuses on clean separation (controller/service/repository), secure update rules (ownership + role checks), and efficient JPA mappings (in-place mutation of note lists) so it can be extended later.
 
-Live site: https://fragrance-tracker-production.up.railway.app
+Live site: https://fragrance-tracker-78km.onrender.com
 
 ---
 
